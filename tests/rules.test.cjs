@@ -12,6 +12,8 @@ function withEnergy(n) {
 test("initial state and ten unique one-use cards", () => {
   const g = game();
   assert.equal(g.players[0].energy, 1);
+  assert.equal(R.START_HP, 5);
+  assert.deepEqual(g.players.map(p => p.hp), [5, 5]);
   assert.equal(R.MAX_ENERGY, 7);
   assert.equal(R.CARDS.length, 10);
   assert.equal(new Set(R.CARDS.map(c => c.id)).size, 10);
@@ -19,12 +21,12 @@ test("initial state and ten unique one-use cards", () => {
 test("attack costs one and cannot be spammed at zero", () => {
   const g = R.resolveTurn(game(), "attack", "charge");
   assert.equal(g.players[0].energy, 0);
-  assert.equal(g.players[1].hp, 2);
+  assert.equal(g.players[1].hp, 4);
   assert.equal(R.validMove(g.players[0], "attack"), false);
 });
 test("guard is free and does not grant energy", () => {
   const g = R.resolveTurn(game(), "attack", "guard");
-  assert.equal(g.players[1].hp, 3);
+  assert.equal(g.players[1].hp, 5);
   assert.equal(g.players[1].energy, 1);
 });
 test("charge capped at seven", () => {
@@ -42,25 +44,25 @@ test("feint punishes guard but not charge", () => {
   assert.equal(R.resolveTurn(game(), "feint", "charge").players[0].energy, 0);
 });
 test("piercing and crushing bypass guard", () => {
-  assert.equal(R.resolveTurn(withEnergy(4), "pierce", "guard").players[1].hp, 2);
-  assert.equal(R.resolveTurn(withEnergy(4), "crush", "guard").players[1].hp, 1);
+  assert.equal(R.resolveTurn(withEnergy(4), "pierce", "guard").players[1].hp, 4);
+  assert.equal(R.resolveTurn(withEnergy(4), "crush", "guard").players[1].hp, 3);
 });
 test("read stops special attacks, not basic attack", () => {
-  assert.equal(R.resolveTurn(withEnergy(4), "read", "allin").players[0].hp, 3);
-  assert.equal(R.resolveTurn(withEnergy(4), "read", "attack").players[0].hp, 2);
+  assert.equal(R.resolveTurn(withEnergy(4), "read", "allin").players[0].hp, 5);
+  assert.equal(R.resolveTurn(withEnergy(4), "read", "attack").players[0].hp, 4);
 });
 test("counter reflects ordinary attack and nonpiercing specials", () => {
   let g = R.resolveTurn(withEnergy(4), "counter", "volley");
-  assert.deepEqual(g.players.map(p => p.hp), [3, 2]);
+  assert.deepEqual(g.players.map(p => p.hp), [5, 4]);
   g = R.resolveTurn(withEnergy(4), "counter", "pierce");
-  assert.deepEqual(g.players.map(p => p.hp), [2, 3]);
+  assert.deepEqual(g.players.map(p => p.hp), [4, 5]);
 });
 test("seal stops cost<=3 special, never cost 4", () => {
   let g = R.resolveTurn(withEnergy(7), "seal", "pierce");
-  assert.equal(g.players[0].hp, 3);
+  assert.equal(g.players[0].hp, 5);
   assert.ok(g.players[1].used.includes("pierce"));
   g = R.resolveTurn(withEnergy(7), "seal", "final");
-  assert.equal(g.players[0].hp, 1);
+  assert.equal(g.players[0].hp, 3);
 });
 test("seal versus seal cancels both with costs spent", () => {
   const g = R.resolveTurn(withEnergy(7), "seal", "seal");
@@ -68,8 +70,8 @@ test("seal versus seal cancels both with costs spent", () => {
   assert.equal(g.players[1].energy, 5);
 });
 test("allin blocked by guard, final still chips guard", () => {
-  assert.equal(R.resolveTurn(withEnergy(4), "allin", "guard").players[1].hp, 3);
-  assert.equal(R.resolveTurn(withEnergy(4), "final", "guard").players[1].hp, 2);
+  assert.equal(R.resolveTurn(withEnergy(4), "allin", "guard").players[1].hp, 5);
+  assert.equal(R.resolveTurn(withEnergy(4), "final", "guard").players[1].hp, 4);
 });
 test("cards are permanently consumed even if failed", () => {
   let g = R.resolveTurn(withEnergy(7), "allin", "guard");
