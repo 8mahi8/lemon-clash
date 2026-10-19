@@ -19,6 +19,7 @@ fs.mkdirSync(screenshots, { recursive: true });
 
 const server = http.createServer((req, res) => {
   const name = (req.url || "/").split("?")[0];
+  if (name === "/favicon.ico") { res.writeHead(204); res.end(); return; }
   const relative = name === "/" ? "index.html" : name === "/embed" ?
     "dist/lemon-clash-embed.html" : decodeURIComponent(name).replace(/^\/+/, "");
   const resolved = path.resolve(root, relative);
@@ -59,6 +60,7 @@ async function botLayout(browser, profile) {
     const feint = page.locator('#cards .move[aria-label^="フェイント"]');
     const before = await feint.boundingBox();
     await feint.click();
+    await page.waitForTimeout(220); // CSS hand-raise transition must finish before geometry check
     const after = await feint.boundingBox();
     assert.ok(after.y < before.y - 8, "selected card should rise in hand");
     assert.match(await page.locator("#cardDetail").innerText(), /フェイント/);
