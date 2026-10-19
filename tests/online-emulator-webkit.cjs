@@ -110,6 +110,15 @@ async function client(browser) {
     assert.match(hostCommit.hash,/^[0-9a-f]{64}$/);
     assert.equal(hostCommit.reveal,undefined,"must not reveal an action before both commits");
     assert.equal(JSON.stringify(hostCommit).includes("attack"),false);
+    // The Rules must reject even the host trying to reveal prematurely.
+    let earlyRevealDenied=false;
+    try {
+      await host.page.evaluate(async ({roomCode,hash})=>{
+        await firebase.database().ref("lemonClashRoomsV1/"+roomCode+"/rounds/1/host")
+          .set({hash,reveal:{action:"attack",nonce:"ab".repeat(32)}});
+      },{roomCode:code,hash:hostCommit.hash});
+    }catch(e){earlyRevealDenied=true;}
+    assert.equal(earlyRevealDenied,true,"Rules must deny host reveal before opponent commit");
     // A guest cannot impersonate the host commit path.
     let guestWriteDenied=false;
     try{
@@ -135,6 +144,18 @@ async function client(browser) {
     await host.page.locator("#roundResult button").click();
     await guest.page.locator("#roundResult button").click();
     assert.equal(await host.page.locator("#confirm").isDisabled(),true);
+    // Verify another full simultaneous turn, including synchronized HP and energy.
+    await host.page.locator('#basics .move[aria-label^="チャージ"]').click();
+    await guest.page.locator('#basics .move[aria-label^="通常攻撃"]').click();
+    await host.page.locator("#confirm").click();
+    await guest.page.locator("#confirm").click();
+    await Promise.all([
+      host.page.locator("#roundResult").waitFor({state:"visible",timeout:30000}),
+      guest.page.locator("#roundResult").waitFor({state:"visible",timeout:30000})
+    ]);
+    assert.equal((await host.page.locator("#myHp").innerText()).includes("4/5"),true);
+    assert.equal((await guest.page.locator("#opHp").innerText()).includes("4/5"),true);
+    assert.equal((await host.page.locator("#myEn").innerText()).includes("1/7"),true);
     assert.deepEqual(host.errors,[]);
     assert.deepEqual(guest.errors,[]);
     console.log("PASS two WebKit clients + anonymous Auth + RTDB commit/reveal + state agreement + authz");
