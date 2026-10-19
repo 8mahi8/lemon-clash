@@ -1,11 +1,15 @@
-/* Dedicated Firebase lab ONLY. Existing BRAWL/Shokoku production settings are never used.
-   Enable anonymous auth + isolated RTDB rules before filling this public configuration. */
-window.LEMON_FIREBASE_CONFIG = window.LEMON_FIREBASE_CONFIG || null;
-// Example public Firebase Web config (NOT a password):
-// window.LEMON_FIREBASE_CONFIG = {
-//   apiKey: "YOUR_TEST_API_KEY",
-//   authDomain: "YOUR_TEST.firebaseapp.com",
-//   databaseURL: "https://YOUR_TEST-default-rtdb.firebaseio.com",
-//   projectId: "YOUR_TEST",
-//   appId: "YOUR_WEB_APP_ID"
-// };
+/* Google Sites school-friends transport.
+   BRAWL and Shokoku already use this Realtime Database. Lemon writes ONLY
+   to its own root `lemonClashRoomsV1`; do not modify their source or rooms.
+
+   Developer note: Firebase server Rules for this new namespace have NOT yet
+   been verified. A public RTDB without Auth cannot enforce player identity;
+   use for private friendly games only, and validate permissions before
+   treating it as release-ready. No player must enter a Firebase URL.
+
+   Test runners can inject a dedicated Auth+RTDB config before this file runs.
+*/
+window.LEMON_FIREBASE_CONFIG = window.LEMON_FIREBASE_CONFIG || {
+  mode: "shared-rtdb",
+  databaseURL: "https://mygame-df915-default-rtdb.firebaseio.com/"
+};
