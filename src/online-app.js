@@ -397,6 +397,11 @@
       window.firebase.initializeApp(config);
     auth = firebaseApp.auth();
     database = firebaseApp.database();
+    // Never point published GitHub Pages / Google Sites at a local emulator.
+    if (window.location.hostname === "127.0.0.1" && window.__LEMON_EMULATOR_ONLY__ === true) {
+      auth.useEmulator("http://127.0.0.1:9099");
+      database.useEmulator("127.0.0.1", 9000);
+    }
     const session = auth.currentUser || (await auth.signInAnonymously()).user;
     if (!session || !session.uid) throw new Error("匿名ログインに失敗しました");
     uid = session.uid;
