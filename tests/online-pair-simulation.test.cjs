@@ -192,7 +192,7 @@ function client(db,uid){
   return {
     uid,el,click:id=>el(id).click(),
     card:name=>{
-      const button=el("basics").children.find(
+      const button=[...el("basics").children,...el("cards").children].find(
         element=>element.attrs["aria-label"]?.startsWith(name));
       assert.ok(button,"missing basic action "+name);
       return button.click();
@@ -297,5 +297,39 @@ test("rejects a tampered initial match before either player can play",async()=>{
   await waitUntil(()=>/開始時のゲーム状態が正しくありません/.test(guest.el("onlineError").textContent),
     "reject forged starting HP");
   assert.equal(guest.visible("battle"),false);
+  assert.deepEqual(db.failures,[]);
+});
+
+
+test("online ultimate works after six charge rounds and ends the match",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"ultimate-host"),guest=client(db,"ultimate-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>/^[0-9]{6}$/.test(host.el("lobbyCode").textContent),"ultimate-room code");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"ultimate-room joined");
+  for(let turn=1;turn<=6;turn++){
+    if(turn>1){host.advance();guest.advance();}
+    host.card("チャージ");guest.card("チャージ");
+    await host.click("confirm");await guest.click("confirm");
+    await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"charge "+turn);
+  }
+  assert.match(host.el("myEn").textContent,/7\/7/);
+  host.advance();guest.advance();
+  host.card("終局宣告");
+  await host.click("confirm");
+  const hostEntry=db.get("lemonClashRoomsV1/"+code+"/rounds/7/host");
+  assert.equal(hostEntry.reveal,undefined,"ultimate choice must remain secret before both commits");
+  guest.card("通常防御");
+  await guest.click("confirm");
+  await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"ultimate reveal");
+  const final=db.get("lemonClashRoomsV1/"+code+"/states/8");
+  assert.equal(final.winner,0);
+  assert.deepEqual(final.players.map(p=>p.hp),[5,5]);
+  assert.equal(final.players[0].used.includes("judgment"),true);
+  assert.match(host.el("roundResult").children[0].children[0].textContent,/勝利/);
+  assert.match(guest.el("roundResult").children[0].children[0].textContent,/敗北/);
   assert.deepEqual(db.failures,[]);
 });
