@@ -1,0 +1,56 @@
+name: Lemon Clash ONLINE 1vs1 (isolated Firebase emulators only)
+on:
+  push:
+    branches: [dev/ipad-hand-ui]
+    paths:
+      - 'src/online*'
+      - 'src/firebase-config.js'
+      - 'src/rules.js'
+      - 'online.html'
+      - 'firebase/lemon-*'
+      - 'tests/online-*'
+      - '.github/workflows/online-emulator.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  online-two-clients:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      FIREBASE_CLI_DISABLE_TELEMETRY: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Syntax and honest commit-reveal unit tests
+        run: |
+          node --check src/online-protocol.js
+          node --check src/online-app.js
+          node --check tests/online-emulator-webkit.cjs
+          node --test tests/online-protocol.test.cjs
+      - name: Install Firebase emulators and WebKit
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts firebase-tools@14.24.0 playwright-core@1.56.1
+          npx playwright-core install --with-deps webkit
+      - name: Download pinned Firebase compat browser SDKs for LOCAL emulator only
+        run: |
+          mkdir -p artifacts/firebase-sdk
+          curl -fsSL --retry 3 --max-time 25 https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js -o artifacts/firebase-sdk/firebase-app-compat.js
+          curl -fsSL --retry 3 --max-time 25 https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js -o artifacts/firebase-sdk/firebase-auth-compat.js
+          curl -fsSL --retry 3 --max-time 25 https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js -o artifacts/firebase-sdk/firebase-database-compat.js
+          test -s artifacts/firebase-sdk/firebase-app-compat.js
+          test -s artifacts/firebase-sdk/firebase-auth-compat.js
+          test -s artifacts/firebase-sdk/firebase-database-compat.js
+      - name: Two independent WebKit clients against Auth and RTDB emulators
+        run: |
+          ./node_modules/.bin/firebase emulators:exec --only auth,database \
+            --project demo-lemon-clash --config firebase/lemon-emulator.json \
+            "node tests/online-emulator-webkit.cjs"
