@@ -9,13 +9,13 @@ function withEnergy(n) {
   g.players[1].energy = n;
   return g;
 }
-test("initial state and ten unique one-use cards", () => {
+test("initial state and eleven unique one-use cards", () => {
   const g = game();
   assert.equal(g.players[0].energy, 1);
   assert.equal(R.START_HP, 5);
   assert.deepEqual(g.players.map(p => p.hp), [5, 5]);
   assert.equal(R.MAX_ENERGY, 7);
-  assert.equal(R.CARDS.length, 10);
+  assert.equal(R.CARDS.length, 11);
   assert.equal(new Set(R.CARDS.map(c => c.id)).size, 10);
 });
 test("attack costs one and cannot be spammed at zero", () => {
@@ -90,4 +90,15 @@ test("invalid moves never mutate state", () => {
   const snapshot = JSON.stringify(g);
   assert.throws(() => R.resolveTurn(g, "allin", "charge"));
   assert.equal(JSON.stringify(g), snapshot);
+});
+
+test("judgment wins regardless of opponent action", () => {
+  for (const id of ["guard", "read", "seal", "counter", "allin", "attack"]) {
+    const g = withEnergy(7);
+    assert.equal(R.resolveTurn(g, "judgment", id).winner, 0);
+  }
+});
+test("simultaneous judgment is draw and requires seven energy", () => {
+  assert.equal(R.validMove(game().players[0], "judgment"), false);
+  assert.equal(R.resolveTurn(withEnergy(7), "judgment", "judgment").winner, "draw");
 });
