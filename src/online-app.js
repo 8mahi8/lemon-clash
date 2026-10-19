@@ -497,18 +497,18 @@
       const snapshot = await ref.once("value");
       const current = snapshot.val();
       if (!current || current.protocol !== P.VERSION) throw new Error("この部屋は見つかりません");
-      if (current.hostUid === uid) {
-        throw new Error("同じ匿名アカウントでは自分の部屋にゲスト参加できません");
+      const returningHost = current.hostUid === uid;
+      if (!returningHost && current.guestUid && current.guestUid !== uid) {
+        throw new Error("この部屋は満員です");
       }
-      if (current.guestUid && current.guestUid !== uid) throw new Error("この部屋は満員です");
       if (Date.now() - current.createdAt > 7200000) throw new Error("この部屋の有効期限が切れています");
-      if (!current.guestUid) {
+      if (!returningHost && !current.guestUid) {
         const ok = await transaction(ref.child("guestUid"),
           data => data === null ? uid : undefined);
         if (!ok) throw new Error("別の人が先に入室しました");
       }
       roomCode = code;
-      seat = "guest";
+      seat = returningHost ? "host" : "guest";
       viewedTurn = 1;
       showWaitingRoom();
       observe(ref);
