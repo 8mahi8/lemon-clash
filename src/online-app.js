@@ -300,7 +300,9 @@
       preview = null;
       setText("msg", "行動確定。相手を待っています…");
     } catch (e) {
-      error("確定に失敗しました: " + (e.message || String(e)));
+      if (epoch === sessionEpoch) {
+        error("確定に失敗しました: " + (e.message || String(e)));
+      }
     } finally {
       if (epoch === sessionEpoch) busy = false;
     }
@@ -387,15 +389,19 @@
   async function processQueue() {
     if (processing) return;
     processing = true;
+    let processingEpoch = sessionEpoch;
     try {
       while (hasQueued) {
         const data = queued;
         hasQueued = false;
         queued = null;
+        processingEpoch = data.epoch;
         await synchronize(data.room, data.epoch);
       }
     } catch (e) {
-      error("通信データを処理できません: " + (e.message || String(e)));
+      if (processingEpoch === sessionEpoch) {
+        error("通信データを処理できません: " + (e.message || String(e)));
+      }
     } finally {
       processing = false;
       if (hasQueued) processQueue();
@@ -411,7 +417,9 @@
       hasQueued = true;
       processQueue();
     };
-    listeningError = e => error("Firebaseの読み取り権限または通信に問題があります: " + e.message);
+    listeningError = e => {
+      if (epoch === sessionEpoch) error("Firebaseの読み取り権限または通信に問題があります: " + e.message);
+    };
     ref.on("value", listener, listeningError);
   }
   function leave() {
