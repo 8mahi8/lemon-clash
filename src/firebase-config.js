@@ -1,6 +1,6 @@
 /* Dedicated Firebase lab ONLY. Existing BRAWL/Shokoku production settings are never used.
    Enable anonymous auth + isolated RTDB rules before filling this public configuration. */
-window.LEMON_FIREBASE_CONFIG = null;
+window.LEMON_FIREBASE_CONFIG = window.LEMON_FIREBASE_CONFIG || null;
 // Example public Firebase Web config (NOT a password):
 // window.LEMON_FIREBASE_CONFIG = {
 //   apiKey: "YOUR_TEST_API_KEY",
