@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-/* Build self-contained offline and ONLINE lab HTML for Google Sites -> Embed code.
-   A configured Firebase project remains required for online; Firebase SDKs are
-   loaded from gstatic only after a user explicitly creates/joins a room. */
+/* Google Sites -> Embed -> EMBED CODE: copy the complete generated .txt contents.
+   This is HTML CODE PASTING, not a GitHub Pages URL and not an iframe URL.
+   Game HTML/CSS/JS are inlined; online matches still require an approved Firebase
+   test config, live RTDB access and the Firebase CDN SDK. */
 "use strict";
 const fs = require("node:fs");
 const path = require("node:path");
@@ -10,24 +11,36 @@ const file = name => fs.readFileSync(path.join(root, name), "utf8");
 function inlineScript(code) {
   return "<script>\n" + code.replace(/<\/script/gi, "<\\/script") + "\n</script>";
 }
-function build(name, scripts, outName) {
-  let html = file(name);
+function build(source, scripts, name) {
+  let html = file(source);
   const marker = scripts.map(p => '<script src="' + p + '"></script>').join("\n  ");
-  if (!html.includes(marker)) {
-    throw new Error("HTML script marker missing: " + name);
+  if (!html.includes(marker)) throw new Error("Cannot inline source script marker: " + source);
+  html = html.replace(marker, scripts.map(p => inlineScript(file(p))).join("\n  "));
+
+  // No external game source, nested iframe, stylesheet, or GitHub URL required.
+  if (/<script\b[^>]*\bsrc\s*=/i.test(html) ||
+      /<iframe\b/i.test(html) ||
+      /<link\b[^>]*\brel\s*=\s*["']?stylesheet/i.test(html)) {
+    throw new Error("Google Sites paste build contains external game assets: " + source);
   }
-  const combined = scripts.map(p => inlineScript(file(p))).join("\n  ");
-  html = html.replace(marker, combined);
-  if (/<script\s+src="src\//.test(html)) {
-    throw new Error("External gameplay source dependency remains in " + name);
+  if (!/^<!doctype html>/i.test(html.trimStart()) || !/<\/html>\s*$/i.test(html)) {
+    throw new Error("Expected a complete HTML document: " + source);
   }
-  const out = path.join(root, "dist", outName);
-  fs.mkdirSync(path.dirname(out), { recursive: true });
-  fs.writeFileSync(out, html, "utf8");
-  process.stdout.write("Wrote " + out + " (" + Buffer.byteLength(html) + " bytes)\n");
+  if (html.includes('src="src/')) throw new Error("Uninlined relative game script");
+
+  const dist = path.join(root, "dist");
+  fs.mkdirSync(dist, { recursive: true });
+  const basename = "lemon-clash-" + name;
+  // .txt has EXACTLY the same contents as .html; this is the copy/paste handoff.
+  for (const extension of [".html", ".txt"]) {
+    const out = path.join(dist, basename + extension);
+    fs.writeFileSync(out, html, "utf8");
+    process.stdout.write("Google Sites EMBED CODE: " + out +
+      " (" + Buffer.byteLength(html, "utf8") + " bytes)\n");
+  }
 }
 build("index.html",
-  ["src/rules.js", "src/app.js"], "lemon-clash-embed.html");
+  ["src/rules.js", "src/app.js"], "embed");
 build("online.html",
   ["src/rules.js", "src/online-protocol.js", "src/firebase-config.js", "src/online-app.js"],
-  "lemon-clash-online-lab-embed.html");
+  "online-lab-embed");
