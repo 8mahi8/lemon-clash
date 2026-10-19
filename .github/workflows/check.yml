@@ -1,7 +1,7 @@
 name: Lemon Clash checks
 on:
   push:
-    branches: [main]
+    branches: [main, dev/ipad-hand-ui]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -20,7 +20,7 @@ jobs:
           node --check src/app.js
           node --check tools/build-embed.cjs
       - name: Card rules tests
-        run: node --test tests/rules.test.cjs
+        run: node --test tests/*.test.cjs
       - name: Build one-file HTML for Google Sites
         run: node tools/build-embed.cjs
       - name: Check inlined scripts
