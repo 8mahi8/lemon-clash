@@ -2,7 +2,7 @@
 (function (root) {
   "use strict";
   const MAX_ENERGY = 7;
-  const START_HP = 3;
+  const START_HP = 5;
   const CARDS = Object.freeze([
     { id: "feint", name: "フェイント", cost: 1, icon: "🎭", type: "utility", description: "相手が通常防御ならエネルギー+3" },
     { id: "drain", name: "エネルギー泥棒", cost: 1, icon: "🌀", type: "utility", description: "相手のチャージを無効にし、自分のエネルギー+2" },
