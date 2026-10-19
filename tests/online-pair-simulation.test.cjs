@@ -172,11 +172,15 @@ function client(db,uid){
     initializeApp(){firebase.apps.push(app);return app;},
     app:()=>app
   };
+  const localStorage={
+    getItem:key=>storage.get("persist:"+key)||null,
+    setItem:(key,val)=>storage.set("persist:"+key,val)
+  };
   const window={
-    firebase,crypto:fakeCrypto,location:{hostname:"simulated.test",protocol:"https:"},
+    firebase,crypto:fakeCrypto,localStorage,
+    location:{hostname:"simulated.test",protocol:"https:"},
     LEMON_FIREBASE_CONFIG:{
-      apiKey:"test-key",authDomain:"simulated.test",
-      databaseURL:"https://simulated.firebaseio.com",projectId:"simulator",appId:"simulator"
+      mode:"shared-rtdb",databaseURL:"https://simulated.firebaseio.com"
     }
   };
   const sessionStorage={
