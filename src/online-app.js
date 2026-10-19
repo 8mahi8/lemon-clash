@@ -75,8 +75,16 @@
     return current;
   }
   async function verifyPublishedState(room, latest) {
-    // A client does not blindly accept a peer's reported score/energy.
-    if (latest.turn === 1) return;
+    // A room creator must not inject a custom starting HP, energy or cards.
+    if (latest.turn === 1) {
+      const initial = R.createGame();
+      if (latest.winner !== initial.winner ||
+          JSON.stringify(latest.history) !== JSON.stringify(initial.history) ||
+          JSON.stringify(latest.players) !== JSON.stringify(initial.players)) {
+        throw new Error("開始時のゲーム状態が正しくありません");
+      }
+      return;
+    }
     const previous = room.states && room.states[String(latest.turn - 1)];
     const entries = room.rounds && room.rounds[String(latest.turn - 1)];
     if (!previous || !entries || !entries.host || !entries.guest ||
@@ -94,7 +102,8 @@
         reveals: { host: entries.host.reveal, guest: entries.guest.reveal }
       }
     }, roomCode, window.crypto.subtle, R);
-    if (!expected || expected.turn !== latest.turn || expected.winner !== latest.winner) {
+    if (!expected || expected.turn !== latest.turn || expected.winner !== latest.winner ||
+        JSON.stringify(expected.history) !== JSON.stringify(latest.history)) {
       throw new Error("両端末のターン結果が一致していません");
     }
     for (let i = 0; i < 2; i++) {
