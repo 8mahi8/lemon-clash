@@ -190,7 +190,7 @@ function client(db,uid){
   }
   const el=id=>document.getElementById(id);
   return {
-    uid,el,click:id=>el(id).click(),
+    uid,window,el,click:id=>el(id).click(),
     card:name=>{
       const button=[...el("basics").children,...el("cards").children].find(
         element=>element.attrs["aria-label"]?.startsWith(name));
@@ -361,4 +361,67 @@ test("a player may leave after committing and rejoin before opponent reveals",as
   assert.ok(after.reveal,"restored secret must be revealed after guest commit");
   assert.equal(db.get("lemonClashRoomsV1/"+code+"/states/2").players[1].hp,4);
   assert.deepEqual(db.failures,[]);
+});
+
+
+test("delayed listener from an exited room cannot move a new room into battle",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"stale-host"),guest=client(db,"stale-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>/^[0-9]{6}$/.test(host.el("lobbyCode").textContent),"first room");
+  const first=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=first;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle"),"first battle");
+  const callback=db.listeners.find(item=>
+    item.path==="lemonClashRoomsV1/"+first).callback;
+  const staleRoom=deepCopy(db.get("lemonClashRoomsV1/"+first));
+  await host.click("quit");
+  await host.click("onlineHost");
+  await waitUntil(()=>host.visible("onlineLobby"),"second lobby");
+  const second=host.el("lobbyCode").textContent;
+  assert.notEqual(first,second);
+  callback({val:()=>staleRoom}); // already queued by Firebase before unsubscribe
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(host.visible("battle"),false);
+  assert.equal(host.el("lobbyCode").textContent,second);
+  assert.deepEqual(db.failures,[]);
+});
+
+test("a delayed hash from a previous room cannot submit into the next room",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"slow-hash-host");
+  await host.click("onlineHost");
+  await waitUntil(()=>host.visible("onlineLobby"),"slow hash first lobby");
+  const first=host.el("lobbyCode").textContent;
+  // Add a guest so that the host can select a move.
+  const guest=client(db,"slow-hash-guest");
+  guest.el("roomInput").value=first;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle"),"slow hash joined");
+  const subtle=host.window.crypto.subtle;
+  const original=subtle.digest;
+  let release=null;
+  try{
+    subtle.digest=(...args)=>new Promise(resolve=>{
+      release=()=>resolve(original(...args));
+    });
+    host.card("通常攻撃");
+    const submission=host.click("confirm");
+    await waitUntil(()=>typeof release==="function","slow digest reached");
+    await host.click("quit");
+    await host.click("onlineHost");
+    await waitUntil(()=>host.visible("onlineLobby"),"new lobby after slow digest");
+    const second=host.el("lobbyCode").textContent;
+    release();
+    await submission;
+    assert.equal(db.get("lemonClashRoomsV1/"+first+"/rounds/1/host"),null);
+    assert.equal(db.get("lemonClashRoomsV1/"+second+"/rounds/1/host"),null);
+    assert.equal(host.el("lobbyCode").textContent,second);
+    assert.equal(host.visible("battle"),false);
+    assert.deepEqual(db.failures,[]);
+  }finally{
+    subtle.digest=original;
+  }
 });
