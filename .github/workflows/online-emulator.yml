@@ -49,6 +49,11 @@ jobs:
           test -s artifacts/firebase-sdk/firebase-app-compat.js
           test -s artifacts/firebase-sdk/firebase-auth-compat.js
           test -s artifacts/firebase-sdk/firebase-database-compat.js
+      - name: Generate actual HTML code to paste into Google Sites
+        run: |
+          node tools/build-embed.cjs
+          test -s dist/lemon-clash-online-lab-embed.txt
+          cmp dist/lemon-clash-online-lab-embed.html dist/lemon-clash-online-lab-embed.txt
       - name: Two independent WebKit clients against Auth and RTDB emulators
         run: |
           ./node_modules/.bin/firebase emulators:exec --only auth,database \
