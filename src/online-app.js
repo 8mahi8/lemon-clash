@@ -15,6 +15,7 @@
   let viewedTurn = 0, showRound = false, roomData = null;
   let secret = null, processing = false, queued = null, hasQueued = false, busy = false;
   let listener = null, listeningError = null;
+  let sessionEpoch = 0;
   let pendingWrites = Object.create(null);
 
   function setText(id, value) { $(id).textContent = value; }
@@ -282,14 +283,17 @@
     const own = game.players[seat === "host" ? 0 : 1];
     if (!R.validMove(own, selected)) return;
     const turn = game.turn, action = selected;
+    const epoch = sessionEpoch, originalRoomRef = roomRef;
     const nonce = P.freshNonce(window.crypto);
     busy = true;
     $("confirm").disabled = true;
     try {
       const hash = await P.makeCommit(roomCode, turn, uid, action, nonce, window.crypto.subtle);
+      // Ignore a late digest from a match already left or replaced.
+      if (epoch !== sessionEpoch || originalRoomRef !== roomRef) return;
       // Never send action or nonce to the database until both players have committed.
       saveSecret(turn, action, nonce, hash);
-      const ref = roomRef.child(turnPendingPath(turn));
+      const ref = originalRoomRef.child(turnPendingPath(turn));
       const ok = await transaction(ref, current => current === null ? { hash } : undefined);
       if (!ok) throw new Error("このターンはすでに行動確定済みです");
       selected = null;
@@ -298,10 +302,11 @@
     } catch (e) {
       error("確定に失敗しました: " + (e.message || String(e)));
     } finally {
-      busy = false;
+      if (epoch === sessionEpoch) busy = false;
     }
   }
-  async function synchronize(room) {
+  async function synchronize(room, epoch) {
+    if (epoch !== sessionEpoch || !seat || !roomRef) return;
     if (!room) {
       leave();
       error("対戦ルームがなくなりました。新しい部屋を作成してください");
@@ -316,6 +321,7 @@
     const incoming = latestGame(room);
     if (!game || incoming.turn !== game.turn) {
       await verifyPublishedState(room, incoming);
+      if (epoch !== sessionEpoch || !roomRef) return;
       if (game && incoming.turn > game.turn) clearSecret(game.turn);
       game = incoming;
       selected = null;
@@ -340,6 +346,7 @@
       }
       const hash = await P.makeCommit(roomCode, turn, uid, pending.action, pending.nonce,
         window.crypto.subtle);
+      if (epoch !== sessionEpoch || !roomRef) return;
       if (hash !== me.hash) throw new Error("保存された選択とコミットが一致しません");
       const key = "reveal:" + turn;
       if (!pendingWrites[key]) {
@@ -364,6 +371,7 @@
         hostUid: room.hostUid, guestUid: room.guestUid, game,
         round: phase
       }, roomCode, window.crypto.subtle, R);
+      if (epoch !== sessionEpoch || !roomRef) return;
       if (resolved) {
         const key = "resolve:" + turn;
         if (!pendingWrites[key]) {
@@ -384,7 +392,7 @@
         const data = queued;
         hasQueued = false;
         queued = null;
-        await synchronize(data);
+        await synchronize(data.room, data.epoch);
       }
     } catch (e) {
       error("通信データを処理できません: " + (e.message || String(e)));
@@ -396,15 +404,22 @@
   function observe(ref) {
     if (roomRef && listener) roomRef.off("value", listener);
     roomRef = ref;
-    listener = snapshot => { queued = snapshot.val(); hasQueued = true; processQueue(); };
+    const epoch = ++sessionEpoch;
+    listener = snapshot => {
+      if (epoch !== sessionEpoch) return;
+      queued = {room: snapshot.val(), epoch};
+      hasQueued = true;
+      processQueue();
+    };
     listeningError = e => error("Firebaseの読み取り権限または通信に問題があります: " + e.message);
     ref.on("value", listener, listeningError);
   }
   function leave() {
     if (roomRef && listener) roomRef.off("value", listener);
+    sessionEpoch++;
     roomRef = null; listener = null; roomCode = ""; seat = null; secret = null;
     roomData = null; game = null; selected = null; preview = null;
-    viewedTurn = 0; showRound = false; busy = false; processing = false; queued = null; hasQueued = false;
+    viewedTurn = 0; showRound = false; busy = false; queued = null; hasQueued = false;
     pendingWrites = Object.create(null);
     visible("home", true);
     visible("onlineLobby", false);
