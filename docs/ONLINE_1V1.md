@@ -13,6 +13,18 @@ The user publishes by **copying the ENTIRE HTML source into Google Sites → Ins
 - The Google Sites-generated iframe may have different origin, sandbox, storage and network policy from a direct browser tab. Test the pasted HTML as an iframe `srcdoc` in WebKit, then test in actual Google Sites school iPad. Never claim a URL-based iframe test proves pasted-code support.
 - Never switch publishing methods without user approval.
 
+## Player experience and reuse of existing games
+
+The final player workflow must match the existing BRAWL / Shokoku school games:
+1. Paste the complete HTML into Google Sites once.
+2. Host presses "Create room" and shares the generated code.
+3. Guest types the room code and presses "Join".
+4. Both play immediately without entering Firebase URLs, credentials, project IDs or setup steps.
+
+Firebase configuration is a developer/build-time concern, never a player-facing requirement. BRAWL and Shokoku use the existing RTDB URL `mygame-df915-default-rtdb.firebaseio.com` and game-specific namespaces; **do not copy that endpoint into Lemon Clash or deploy rules to it without inspecting the current live rules and obtaining explicit authorization**. A separately provisioned Firebase app can still deliver the exact same one-code player experience. Do not claim online is operational until the configuration is deployed and two clients connect successfully.
+
+The game's public HTML distribution remains Google Sites **pasted code**, not a GitHub Pages iframe. Study BRAWL's lobby, room-code flow, school iPad touch behavior and Shokoku's reconnect/error states as design references. Do not modify either source repository.
+
 ## Setup required before two-device testing
 
 1. Create a separate Firebase test project, register a Web app and enable Anonymous Authentication.
