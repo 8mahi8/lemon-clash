@@ -34,11 +34,10 @@ test("offline and online Google Sites paste texts match complete standalone HTML
     scripts.forEach((source, i) => new vm.Script(source, {filename:name+"#script"+i}));
   }
 });
-test("online code pasted into Google Sites fails closed without dedicated Firebase", () => {
-  const text = read("lemon-clash-online-lab-embed.txt");
-  assert.match(text, /window\.LEMON_FIREBASE_CONFIG\s*=\s*window\.LEMON_FIREBASE_CONFIG\s*\|\|\s*null/);
-  assert.match(text, /専用Firebaseテスト環境が未設定/);
-  assert.match(text, /lemonClashRoomsV1/);
-  assert.doesNotMatch(text, /mygame-df915/);
-  assert.doesNotMatch(text, /shokokuRooms1v1/);
+test("online embed includes the shared RTDB connection and isolated room namespace", () => {
+  const html = read("lemon-clash-online-lab-embed.txt");
+  assert.ok(html.includes('mode: "shared-rtdb"'));
+  assert.ok(html.includes("mygame-df915-default-rtdb.firebaseio.com"));
+  assert.ok(html.includes("lemonClashRoomsV1"));
+  assert.equal(html.includes("shokokuRooms1v1"),false);
 });
