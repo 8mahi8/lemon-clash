@@ -449,27 +449,50 @@
       document.head.append(script);
     });
   }
+  function localPlayerId() {
+    // The shared RTDB used by BRAWL/Shokoku has no Firebase Auth configuration.
+    // Generate a separate random local identifier; it is NOT authentication.
+    // This is for private friend play only, never a security boundary.
+    const key = "lemon-clash-player-id-v1";
+    let id = "";
+    try { id = window.localStorage.getItem(key) || ""; } catch (e) {}
+    if (!/^lc-[a-f0-9]{64}$/.test(id)) {
+      id = "lc-" + P.freshNonce(window.crypto);
+      try { window.localStorage.setItem(key, id); } catch (e) {}
+    }
+    return id;
+  }
   async function initializeFirebase() {
     const config = window.LEMON_FIREBASE_CONFIG;
-    if (!config || !["apiKey", "authDomain", "databaseURL", "projectId", "appId"].every(k =>
-      typeof config[k] === "string" && config[k])) {
-      throw new Error("専用Firebaseテスト環境が未設定です。src/firebase-config.js を設定してください");
+    const shared = config && config.mode === "shared-rtdb";
+    if (!config || typeof config.databaseURL !== "string" ||
+        (!shared && !["apiKey", "authDomain", "projectId", "appId"].every(k =>
+          typeof config[k] === "string" && config[k]))) {
+      throw new Error("Firebaseの接続設定がありません");
     }
     if (!/^https:\/\/[a-z0-9.-]+\.(?:firebaseio\.com|firebasedatabase\.app)\/?$/i.test(config.databaseURL)) {
-      throw new Error("専用Firebase RTDBのURLが不正です");
+      throw new Error("Firebase RTDBのURLが不正です");
     }
     if (!window.crypto || !window.crypto.subtle) {
       throw new Error("HTTPSなどの安全なコンテキストで開いてください");
     }
-    if (!window.firebase || !window.firebase.auth || !window.firebase.database) {
+    if (!window.firebase || !window.firebase.database ||
+        (!shared && !window.firebase.auth)) {
       await loadSDK("firebase-app-compat.js");
-      await loadSDK("firebase-auth-compat.js");
+      if (!shared) await loadSDK("firebase-auth-compat.js");
       await loadSDK("firebase-database-compat.js");
     }
+    const appConfig = shared ? { databaseURL: config.databaseURL } : config;
     firebaseApp = window.firebase.apps.length ? window.firebase.app() :
-      window.firebase.initializeApp(config);
-    auth = firebaseApp.auth();
+      window.firebase.initializeApp(appConfig);
     database = firebaseApp.database();
+    if (shared) {
+      // Existing school games use unauthenticated RTDB. Keep Lemon writes
+      // under lemonClashRoomsV1 only; do not alter any other game's rooms.
+      uid = localPlayerId();
+      return;
+    }
+    auth = firebaseApp.auth();
     // Never point published GitHub Pages / Google Sites at a local emulator.
     if (window.__LEMON_EMULATOR_ONLY__ === true && config.projectId === "demo-lemon-clash" &&
         (window.location.hostname === "127.0.0.1" || window.location.protocol === "about:")) {
