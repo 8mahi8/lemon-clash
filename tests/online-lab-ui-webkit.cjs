@@ -36,8 +36,7 @@ const server = http.createServer((req, res) => {
       assert.equal(await page.locator("#onlineHost").isVisible(), true);
       assert.equal(await page.locator("#onlineJoin").isVisible(), true);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 3));
-      await page.locator("#onlineHost").click();
-      await page.locator("#onlineError").getByText(/未設定/).waitFor();
+      assert.match(await page.locator("#onlineError").innerText(),/部屋を作る/);
       assert.deepEqual(errors, []);
       await ctx.close();
     }
@@ -48,11 +47,11 @@ const server = http.createServer((req, res) => {
     await page.setContent('<iframe id="site" sandbox="allow-scripts allow-same-origin" ' +
       'style="width:900px;height:520px;border:0" src="http://127.0.0.1:8783/embed-online"></iframe>');
     const inside = page.frameLocator("#site");
-    await inside.locator("#onlineHost").click();
-    assert.match(await inside.locator("#onlineError").innerText(), /未設定/);
+    assert.equal(await inside.locator("#onlineHost").isVisible(),true);
+    assert.match(await inside.locator("#onlineError").innerText(), /部屋を作る/);
     assert.deepEqual(errors, []);
     await ctx.close();
-    console.log("PASS online lab UI and Google Sites-like iframe fail closed without test Firebase config");
+    console.log("PASS preconfigured online UI and Google Sites-like iframe rendering");
   } finally {
     if (browser) await browser.close();
     await new Promise(resolve => server.close(resolve));
