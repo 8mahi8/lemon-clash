@@ -20,6 +20,8 @@ jobs:
           node --check src/app.js
           node --check tests/ui-webkit.cjs
           node --check tests/online-lab-ui-webkit.cjs
+          node --check tests/sites-paste-webkit.cjs
+          node --check tests/sites-paste.test.cjs
           node --check src/online-protocol.js
           node --check src/online-app.js
           node --check tools/build-embed.cjs
@@ -31,6 +33,10 @@ jobs:
         run: |
           test -s dist/lemon-clash-embed.html
           test -s dist/lemon-clash-online-lab-embed.html
+          test -s dist/lemon-clash-embed.txt
+          test -s dist/lemon-clash-online-lab-embed.txt
+          cmp dist/lemon-clash-embed.html dist/lemon-clash-embed.txt
+          cmp dist/lemon-clash-online-lab-embed.html dist/lemon-clash-online-lab-embed.txt
           ! grep -q 'src="src/' dist/lemon-clash-embed.html
           ! grep -q 'src="src/' dist/lemon-clash-online-lab-embed.html
       - name: Save Google Sites HTML
@@ -40,6 +46,8 @@ jobs:
           path: |
             dist/lemon-clash-embed.html
             dist/lemon-clash-online-lab-embed.html
+            dist/lemon-clash-embed.txt
+            dist/lemon-clash-online-lab-embed.txt
 
   ipad-ui-webkit:
     runs-on: ubuntu-latest
@@ -59,6 +67,7 @@ jobs:
         run: |
           node tests/ui-webkit.cjs
           node tests/online-lab-ui-webkit.cjs
+          node tests/sites-paste-webkit.cjs
       - name: Save screenshots even if UI checks fail
         if: always()
         uses: actions/upload-artifact@v4
