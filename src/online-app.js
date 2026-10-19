@@ -432,7 +432,8 @@
     auth = firebaseApp.auth();
     database = firebaseApp.database();
     // Never point published GitHub Pages / Google Sites at a local emulator.
-    if (window.location.hostname === "127.0.0.1" && window.__LEMON_EMULATOR_ONLY__ === true) {
+    if (window.__LEMON_EMULATOR_ONLY__ === true && config.projectId === "demo-lemon-clash" &&
+        (window.location.hostname === "127.0.0.1" || window.location.protocol === "about:")) {
       auth.useEmulator("http://127.0.0.1:9099");
       database.useEmulator("127.0.0.1", 9000);
     }
