@@ -1,0 +1,31 @@
+{
+  "rules": {
+    "lemonClashRoomsV1": {
+      "$room": {
+        ".read": "auth != null && (!data.exists() || data.child('hostUid').val() === auth.uid || data.child('guestUid').val() === auth.uid || (!data.child('guestUid').exists() && data.child('createdAt').val() > now - 7200000))",
+        ".write": "auth != null && !data.exists() && $room.matches(/^[0-9]{6}$/) && newData.child('protocol').val() === 1 && newData.child('hostUid').val() === auth.uid && !newData.child('guestUid').exists() && newData.child('createdAt').val() > now - 300000 && newData.child('createdAt').val() < now + 300000 && newData.child('states').child('1').child('turn').val() === 1",
+        "guestUid": {
+          ".write": "auth != null && !data.exists() && newData.val() === auth.uid && auth.uid !== data.parent().child('hostUid').val() && data.parent().child('createdAt').val() > now - 7200000"
+        },
+        "rounds": {
+          "$turn": {
+            "host": {
+              ".write": "auth != null && auth.uid === root.child('lemonClashRoomsV1').child($room).child('hostUid').val() && ( (!data.exists() && newData.child('hash').isString() && newData.child('hash').val().matches(/^[0-9a-f]{64}$/) && !newData.child('reveal').exists()) || (data.child('hash').exists() && !data.child('reveal').exists() && newData.child('hash').val() === data.child('hash').val() && newData.child('reveal').child('action').isString() && newData.child('reveal').child('nonce').isString()) )",
+              ".validate": "newData.hasChildren(['hash'])"
+            },
+            "guest": {
+              ".write": "auth != null && auth.uid === root.child('lemonClashRoomsV1').child($room).child('guestUid').val() && ( (!data.exists() && newData.child('hash').isString() && newData.child('hash').val().matches(/^[0-9a-f]{64}$/) && !newData.child('reveal').exists()) || (data.child('hash').exists() && !data.child('reveal').exists() && newData.child('hash').val() === data.child('hash').val() && newData.child('reveal').child('action').isString() && newData.child('reveal').child('nonce').isString()) )",
+              ".validate": "newData.hasChildren(['hash'])"
+            }
+          }
+        },
+        "states": {
+          "$turn": {
+            ".write": "auth != null && !data.exists() && (auth.uid === root.child('lemonClashRoomsV1').child($room).child('hostUid').val() || auth.uid === root.child('lemonClashRoomsV1').child($room).child('guestUid').val()) && newData.child('turn').val() >= 2",
+            ".validate": "newData.hasChildren(['turn', 'players'])"
+          }
+        }
+      }
+    }
+  }
+}
