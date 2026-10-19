@@ -333,3 +333,32 @@ test("online ultimate works after six charge rounds and ends the match",async()=
   assert.match(guest.el("roundResult").children[0].children[0].textContent,/敗北/);
   assert.deepEqual(db.failures,[]);
 });
+
+
+test("a player may leave after committing and rejoin before opponent reveals",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"reveal-host"),guest=client(db,"reveal-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>/^[0-9]{6}$/.test(host.el("lobbyCode").textContent),"reveal-room code");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"reveal-room joined");
+  host.card("通常攻撃");
+  await host.click("confirm");
+  const previous=db.get("lemonClashRoomsV1/"+code+"/rounds/1/host");
+  assert.match(previous.hash,/^[a-f0-9]{64}$/);
+  assert.equal(previous.reveal,undefined);
+  await host.click("quit");
+  host.el("roomInput").value=code;
+  await host.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&host.visible("onlineWait"),"host rejoin pending reveal");
+  guest.card("チャージ");
+  await guest.click("confirm");
+  await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
+    "both reveal after returning host");
+  const after=db.get("lemonClashRoomsV1/"+code+"/rounds/1/host");
+  assert.ok(after.reveal,"restored secret must be revealed after guest commit");
+  assert.equal(db.get("lemonClashRoomsV1/"+code+"/states/2").players[1].hp,4);
+  assert.deepEqual(db.failures,[]);
+});
