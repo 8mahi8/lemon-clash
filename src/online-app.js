@@ -74,6 +74,38 @@
     if (current.turn !== turn) throw new Error("ゲームのターン番号が一致しません");
     return current;
   }
+  async function verifyPublishedState(room, latest) {
+    // A client does not blindly accept a peer's reported score/energy.
+    if (latest.turn === 1) return;
+    const previous = room.states && room.states[String(latest.turn - 1)];
+    const entries = room.rounds && room.rounds[String(latest.turn - 1)];
+    if (!previous || !entries || !entries.host || !entries.guest ||
+        !entries.host.reveal || !entries.guest.reveal) {
+      throw new Error("未検証のターン結果が送信されました");
+    }
+    const earlier = readGame(previous);
+    const expected = await P.resolveCommittedRound({
+      hostUid: room.hostUid,
+      guestUid: room.guestUid,
+      game: earlier,
+      round: {
+        turn: earlier.turn,
+        commits: { host: entries.host.hash, guest: entries.guest.hash },
+        reveals: { host: entries.host.reveal, guest: entries.guest.reveal }
+      }
+    }, roomCode, window.crypto.subtle, R);
+    if (!expected || expected.turn !== latest.turn || expected.winner !== latest.winner) {
+      throw new Error("両端末のターン結果が一致していません");
+    }
+    for (let i = 0; i < 2; i++) {
+      const a = expected.players[i], b = latest.players[i];
+      if (a.hp !== b.hp || a.energy !== b.energy ||
+          JSON.stringify(a.used) !== JSON.stringify(b.used)) {
+        throw new Error("HP・エネルギー・使用済みカードが同期していません");
+      }
+    }
+  }
+
   function resetSelection() {
     selected = null;
     preview = null;
@@ -270,6 +302,7 @@
     if (!room.guestUid) { showWaitingRoom(); return; }
     const incoming = latestGame(room);
     if (!game || incoming.turn !== game.turn) {
+      await verifyPublishedState(room, incoming);
       if (game && incoming.turn > game.turn) clearSecret(game.turn);
       game = incoming;
       selected = null;
