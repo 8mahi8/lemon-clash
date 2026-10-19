@@ -25,6 +25,21 @@ Firebase configuration is a developer/build-time concern, never a player-facing 
 
 The game's public HTML distribution remains Google Sites **pasted code**, not a GitHub Pages iframe. Study BRAWL's lobby, room-code flow, school iPad touch behavior and Shokoku's reconnect/error states as design references. Do not modify either source repository.
 
+## Firebase integration status (October 2026)
+
+The user's attempt to connect the Firebase plugin to ChatGPT was unsuccessful and is intentionally **on hold**. Do not ask for reconnection as a prerequisite to continuing game development. The ChatGPT plugin is distinct from the Firebase SDK embedded in the final game.
+
+Continue freely on the development branch with source-level tests, the in-memory two-player simulator (`node --test tests/online-pair-simulation.test.cjs`), and isolated Firebase Auth/RTDB emulators. Do not write to either existing game's production database. The production backend has **not** been connected or approved, and the user should not be asked to paste an unconfigured online build into Google Sites.
+
+The target player experience remains **paste one HTML source once, create a room, enter a room code and play**. No player should enter a Firebase URL or manage Firebase credentials. Before calling the game release-ready, obtain an authorized backend configuration, verify real two-browser network play, and have the user test the exact embedded code on school iPads.
+
+## Test evidence boundaries
+
+- In-memory simulator tests use real rules/protocol/client application code with a mocked DOM/database. This verifies application state logic, **not** browser behavior or actual Firebase Rules enforcement.
+- WebKit plus Auth/RTDB emulators is an additional test, authored in `tests/online-emulator-webkit.cjs` and configured in GitHub Actions. It is **not verified as run** until a completed test run/log exists.
+- Direct Google Sites embedding on school Safari is a separate final step and cannot be substituted with a GitHub Pages URL.
+- GitHub Actions history checked on 2026-10-20 showed only Pages runs on main, no dev-branch two-browser workflow run. Do not claim the emulator test passed until this changes.
+
 ## Setup required before two-device testing
 
 1. Create a separate Firebase test project, register a Web app and enable Anonymous Authentication.
