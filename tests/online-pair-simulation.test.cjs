@@ -42,7 +42,11 @@ class Element {
 class Document {
   constructor(){this.elements=new Map();this.head=new Element("head");}
   getElementById(id){
-    if(!this.elements.has(id))this.elements.set(id,new Element());
+    if(!this.elements.has(id)){
+      const element=new Element();
+      if(["battle","onlineLobby","roundResult","onlineWait","handoff"].includes(id))element.classList.toggle("hidden",true);
+      this.elements.set(id,element);
+    }
     return this.elements.get(id);
   }
   createElement(tag){return new Element(tag);}
