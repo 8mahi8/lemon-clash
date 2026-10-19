@@ -11,7 +11,7 @@ CCレモン型の同時読み合い × 11枚の使い切り特殊カード（開
 - ✅ 行動を秘密で選び、双方の確定後に同時解決
 - ✅ BOT戦、1台で端末を交代する2人対戦
 - ✅ Node標準テストランナーによるカード相性テスト
-- ⚠️ **オンライン1vs1の開発用コードは追加済み。2端末での実動作は未検証で未公開**
+- ⚠️ **オンライン1vs1の開発用コードは追加済み。Chromiumの独立した2画面＋模擬RTDBで9ターン完走。実Firebaseと学校iPadは未検証**
 - ⬜ 学校iPad + Google Sites + Firebase 実環境での確認は未実施
 
 ## 学校への公開方法：Google SitesにHTML全文を貼り付ける
@@ -27,7 +27,7 @@ HTML全文は以下を実行して生成：
 
 同名の `.html` ファイルと `.txt` ファイルは**内容が完全一致**し、CSS・ゲーム用JavaScript・ルールをファイル内に含みます。Google Sitesの「埋め込みコード」に**ファイル内容全体**を貼り付けます。GitHubのファイルURL、GitHub PagesのURL、HTMLファイル名、ダウンロードURLを貼るのではありません。
 
-オンライン版は貼っただけでは通信できません。専用のFirebaseテスト環境（Web設定、匿名認証、Realtime Database Rules）が必要で、Firebase SDK読み込みとデータ同期にネットワーク接続を使用します。**既存BRAWL/小国戦線のFirebaseを流用しない。**
+オンライン用HTMLには、BRAWL・小国戦線で使用しているRTDBの接続先が開発版に設定されています。プレイヤーはルーム番号だけを使います。ただし、LEMON専用領域 `lemonClashRoomsV1` の実際のFirebase書き込み権限は未確認であり、ゲーム用JSに加えてFirebase SDKの読み込みとネットワーク接続が必要です。既存ゲームのデータや設定は変更しません。
 
 Google Sites風のコード貼り付け検証：
 
@@ -63,13 +63,13 @@ WebKitの貼り付け模擬テスト：
 
 - `online.html`: 6桁の部屋作成・参加、秘密コミット、SHA-256照合、勝敗同期の試作画面。
 - `src/online-protocol.js`: 同時選択用のコミット・公開検証ロジック。
-- `src/online-app.js`: 別プロジェクトFirebase匿名認証＋Realtime Database接続処理。
+- `src/online-app.js`: 既存RTDB上のLEMON専用領域＋端末ローカルプレイヤーIDを使う友人用通信処理（専用Authプロジェクトモードも保留）。
 - `firebase/lemon-clash-lab.rules.json`: **専用テスト環境だけ**の権限ルール。
 - `tests/online-protocol.test.cjs`: コミット改ざん検出等の単体テスト。
 - `tests/online-emulator-webkit.cjs`: 2台WebKit＋ローカルFirebaseエミュレーターの統合試験。
 - `dist/lemon-clash-online-lab-embed.txt`: **Google Sitesの埋め込みコード欄にそのまま貼り付けるHTML全文**（同名 `.html` と同一内容）。
 
-**重要：まだオンライン対戦は公開していない。** `src/firebase-config.js` はnullのままで、認証・通信が開始されない。専用Firebaseテストプロジェクトの準備とWebKit/エミュレーターでの実テストが必要。詳しい手順は `docs/ONLINE_1V1.md`。既存BRAWL・小国戦線のFirebase設定は流用しない。
+**重要：まだ「実オンライン対戦の動作確認済み公開版」ではない。** `src/firebase-config.js` は学校で動作中のRTDB接続先を設定済み。Google Sites埋め込みHTMLを使用する2つのChromium画面＋模擬RTDBで9ターンの完走を確認したが、実RTDBの権限と学校iPad Safariは未確認。Google DriveにHTML全文TXTの接続テスト版を保存し、実機確認待ち。BRAWLと小国戦線のソース・Firebaseデータ・Rulesは変更しない。詳しくは `docs/ONLINE_1V1.md`。
 
 ## オンライン対戦の設計メモ（今後）
 
