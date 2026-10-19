@@ -35,7 +35,14 @@
     $("myHp").textContent = "♥ " + self.hp;
     $("myEn").textContent = "⚡ " + self.energy;
     $("opHp").textContent = "♥ " + foe.hp;
-    $("opEn").textContent = "⚡ " + foe.energy;
+    $("opEn").textContent = "⚡ " + foe.energy + "/7";
+    $("myHp").textContent += "/5";
+    $("opHp").textContent += "/5";
+    $("myEn").textContent += "/7";
+    for (const [id, value] of [["myMeter", self.energy], ["opMeter", foe.energy]]) {
+      const meter = $(id); meter.replaceChildren();
+      for (let n = 0; n < 7; n++) { const seg = document.createElement("i"); if (n < value) seg.className = "on"; meter.append(seg); }
+    }
   }
 
   function moveButton(id, player) {
@@ -65,6 +72,10 @@
       selected = id;
       renderMoves();
       $("selectedDetail").textContent = move.name + "： " + move.description;
+      $("cardDetail").replaceChildren();
+      const title = document.createElement("strong"); title.textContent = move.icon + " " + move.name + " · ⚡" + move.cost;
+      const detail = document.createElement("p"); detail.textContent = move.description + (R.isCard(id) ? "（使い切り）" : "（何度でも使用可能）");
+      $("cardDetail").append(title, detail);
       $("confirm").disabled = false;
     });
     return btn;
@@ -128,7 +139,9 @@
       weights.read = 16;
       weights.counter = 18;
       weights.guard = 12;
+      weights.judgment = 30;
     }
+    if (player.energy === 7) weights.judgment = 100;
     if (enemy.hp === 1) {
       weights.pierce = 25;
       weights.crush = 16;
