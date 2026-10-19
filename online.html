@@ -63,16 +63,16 @@
 </head>
 <body>
   <div id="app" class="app" aria-live="polite">
-    <header class="top"><div class="brand">🍋 LEMON <b>CLASH</b></div><span class="pill">オンライン隔離試作 · 1vs1</span></header>
+    <header class="top"><div class="brand">🍋 LEMON <b>CLASH</b></div><span class="pill">友達とオンライン対戦 · 1vs1</span></header>
     <div id="home">
       <section class="hero">
         <div class="fruit">🍋⚔️</div><h1>読んで、溜めて、<br>切り札を撃て。</h1>
         <p>CCレモン風の同時読み合い × 使い切りカード11枚。攻撃もカードもエネルギーを消費する。相手の一手を読み切ろう。</p>
         <div class="choices"><button class="btn" id="onlineHost">6桁の部屋を作る</button><input id="roomInput" type="text" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="6桁の部屋コード" aria-label="参加する部屋コード"><button class="btn secondary" id="onlineJoin">部屋に参加</button></div>
-        <p id="onlineError" class="note" role="status" aria-live="polite">専用Firebaseテスト環境を設定すると接続できます。</p>
+        <p id="onlineError" class="note" role="status" aria-live="polite">「部屋を作る」で6桁の番号を発行。友達は番号を入力して参加してね。</p>
       </section>
       <div class="intro"><div><strong>⚡ チャージ</strong>エネルギーを1獲得</div><div><strong>⚔️ 攻撃</strong>エネルギー1で1ダメージ</div><div><strong>🛡️ 防御</strong>攻撃を防ぐ。チャージには隙ができる</div></div>
-      <p class="note">オンライン隔離試作版。通信にはFirebase匿名認証と専用RTDBが必要です。設定がなければ接続できません。</p>
+      <p class="note">通信はBRAWL・小国戦線と共通のFirebaseを使用。ルーム番号だけで友達と1vs1対戦できます。</p>
     </div>
     <div id="onlineLobby" class="panel hidden" role="status" aria-live="polite">
       <h2>対戦ルーム <span id="lobbyCode" class="lobbyCode"></span></h2>
