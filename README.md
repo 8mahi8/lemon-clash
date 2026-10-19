@@ -50,6 +50,18 @@ GitHub Actions の **Lemon Clash checks** が成功した場合、同じHTMLは�
 
 実装詳細：src/rules.js。テスト：tests/rules.test.cjs。
 
+## 開発ブランチでのオンライン隔離試作
+
+- `online.html`: 6桁の部屋作成・参加、秘密コミット、SHA-256照合、勝敗同期の試作画面。
+- `src/online-protocol.js`: 同時選択用のコミット・公開検証ロジック。
+- `src/online-app.js`: 別プロジェクトFirebase匿名認証＋Realtime Database接続処理。
+- `firebase/lemon-clash-lab.rules.json`: **専用テスト環境だけ**の権限ルール。
+- `tests/online-protocol.test.cjs`: コミット改ざん検出等の単体テスト。
+- `tests/online-emulator-webkit.cjs`: 2台WebKit＋ローカルFirebaseエミュレーターの統合試験。
+- `dist/lemon-clash-online-lab-embed.html`: ビルド時生成のオンライン用Google Sites埋め込みHTML全文。
+
+**重要：まだオンライン対戦は公開していない。** `src/firebase-config.js` はnullのままで、認証・通信が開始されない。専用Firebaseテストプロジェクトの準備とWebKit/エミュレーターでの実テストが必要。詳しい手順は `docs/ONLINE_1V1.md`。既存BRAWL・小国戦線のFirebase設定は流用しない。
+
 ## オンライン対戦の設計メモ（今後）
 
 Firebase RTDBを使い、専用ルームでお互いの行動を秘密で確定し、**両者のコミット完了後に公開・検証**する方式を検討。
