@@ -19,6 +19,9 @@ jobs:
           node --check src/rules.js
           node --check src/app.js
           node --check tests/ui-webkit.cjs
+          node --check tests/online-lab-ui-webkit.cjs
+          node --check src/online-protocol.js
+          node --check src/online-app.js
           node --check tools/build-embed.cjs
       - name: Card rules tests
         run: node --test tests/*.test.cjs
@@ -27,12 +30,16 @@ jobs:
       - name: Check inlined scripts
         run: |
           test -s dist/lemon-clash-embed.html
+          test -s dist/lemon-clash-online-lab-embed.html
           ! grep -q 'src="src/' dist/lemon-clash-embed.html
+          ! grep -q 'src="src/' dist/lemon-clash-online-lab-embed.html
       - name: Save Google Sites HTML
         uses: actions/upload-artifact@v4
         with:
           name: lemon-clash-google-sites-html
-          path: dist/lemon-clash-embed.html
+          path: |
+            dist/lemon-clash-embed.html
+            dist/lemon-clash-online-lab-embed.html
 
   ipad-ui-webkit:
     runs-on: ubuntu-latest
@@ -49,7 +56,9 @@ jobs:
       - name: Build standalone Google Sites HTML
         run: node tools/build-embed.cjs
       - name: iPad, pass-and-play and Google Sites-like iframe checks
-        run: node tests/ui-webkit.cjs
+        run: |
+          node tests/ui-webkit.cjs
+          node tests/online-lab-ui-webkit.cjs
       - name: Save screenshots even if UI checks fail
         if: always()
         uses: actions/upload-artifact@v4
