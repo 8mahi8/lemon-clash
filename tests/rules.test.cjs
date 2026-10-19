@@ -16,7 +16,7 @@ test("initial state and eleven unique one-use cards", () => {
   assert.deepEqual(g.players.map(p => p.hp), [5, 5]);
   assert.equal(R.MAX_ENERGY, 7);
   assert.equal(R.CARDS.length, 11);
-  assert.equal(new Set(R.CARDS.map(c => c.id)).size, 10);
+  assert.equal(new Set(R.CARDS.map(c => c.id)).size, 11);
 });
 test("attack costs one and cannot be spammed at zero", () => {
   const g = R.resolveTurn(game(), "attack", "charge");
