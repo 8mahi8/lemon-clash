@@ -13,8 +13,10 @@ function inlineScript(code) {
 }
 function build(source, scripts, name) {
   let html = file(source);
-  const marker = scripts.map(p => '<script src="' + p + '"></script>').join("\n  ");
-  if (!html.includes(marker)) throw new Error("Cannot inline source script marker: " + source);
+  // Accept both adjacent scripts (offline source) and multiline tags (online source).
+  const marker = new RegExp(scripts.map(p =>
+    '<script src="' + p.replace(/\./g, '\\.') + '"></script>').join('\\s*'), 'i');
+  if (!marker.test(html)) throw new Error("Cannot inline source script marker: " + source);
   html = html.replace(marker, scripts.map(p => inlineScript(file(p))).join("\n  "));
 
   // No external game source, nested iframe, stylesheet, or GitHub URL required.
