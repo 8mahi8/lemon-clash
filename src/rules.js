@@ -13,7 +13,8 @@
     { id: "volley", name: "連撃", cost: 3, icon: "⚔️", type: "attack", description: "2ダメージ。通常防御には防がれる" },
     { id: "crush", name: "粉砕", cost: 3, icon: "💥", type: "attack", description: "通常防御に2ダメージ、それ以外には1ダメージ" },
     { id: "final", name: "終焉の一撃", cost: 4, icon: "☄️", type: "attack", description: "2ダメージ。通常防御でも1ダメージ" },
-    { id: "allin", name: "オールイン", cost: 4, icon: "🔥", type: "attack", description: "3ダメージ。通常防御には防がれる" }
+    { id: "allin", name: "オールイン", cost: 4, icon: "🔥", type: "attack", description: "3ダメージ。通常防御には防がれる" },
+    { id: "judgment", name: "終局宣告", cost: 7, icon: "👑", type: "ultimate", description: "使用が成立した時点で勝利。防御・見切り・封印・カウンター無効" }
   ]);
   const LOOKUP = Object.fromEntries(CARDS.map(function (card) { return [card.id, card]; }));
   const BASIC = Object.freeze({
@@ -107,7 +108,10 @@
       p.hp = Math.max(0, p.hp - incoming[i]);
     });
     let winner = null;
-    if (players[0].hp === 0 && players[1].hp === 0) winner = "draw";
+    if (ids[0] === "judgment" && ids[1] === "judgment") winner = "draw";
+    else if (ids[0] === "judgment") winner = 0;
+    else if (ids[1] === "judgment") winner = 1;
+    else if (players[0].hp === 0 && players[1].hp === 0) winner = "draw";
     else if (players[0].hp === 0) winner = 1;
     else if (players[1].hp === 0) winner = 0;
     if (incoming[0] || incoming[1]) {
