@@ -13,7 +13,7 @@
   let roomRef = null, roomCode = "", seat = null;
   let game = null, selected = null, preview = null;
   let viewedTurn = 0, showRound = false, roomData = null;
-  let secret = null, processing = false, queued = null, busy = false;
+  let secret = null, processing = false, queued = null, hasQueued = false, busy = false;
   let listener = null, listeningError = null;
   let pendingWrites = Object.create(null);
 
@@ -367,8 +367,9 @@
     if (processing) return;
     processing = true;
     try {
-      while (queued !== null) {
+      while (hasQueued) {
         const data = queued;
+        hasQueued = false;
         queued = null;
         await synchronize(data);
       }
@@ -376,13 +377,13 @@
       error("通信データを処理できません: " + (e.message || String(e)));
     } finally {
       processing = false;
-      if (queued !== null) processQueue();
+      if (hasQueued) processQueue();
     }
   }
   function observe(ref) {
     if (roomRef && listener) roomRef.off("value", listener);
     roomRef = ref;
-    listener = snapshot => { queued = snapshot.val(); processQueue(); };
+    listener = snapshot => { queued = snapshot.val(); hasQueued = true; processQueue(); };
     listeningError = e => error("Firebaseの読み取り権限または通信に問題があります: " + e.message);
     ref.on("value", listener, listeningError);
   }
@@ -390,7 +391,7 @@
     if (roomRef && listener) roomRef.off("value", listener);
     roomRef = null; listener = null; roomCode = ""; seat = null; secret = null;
     roomData = null; game = null; selected = null; preview = null;
-    viewedTurn = 0; showRound = false; busy = false; processing = false; queued = null;
+    viewedTurn = 0; showRound = false; busy = false; processing = false; queued = null; hasQueued = false;
     pendingWrites = Object.create(null);
     visible("home", true);
     visible("onlineLobby", false);
