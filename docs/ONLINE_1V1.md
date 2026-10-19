@@ -2,6 +2,17 @@
 
 This is a non-production test implementation. Do not change BRAWL/Shokoku/Firebase production projects or published Google Sites.
 
+## School release / Google Sites publishing CONTRACT
+
+The user publishes by **copying the ENTIRE HTML source into Google Sites → Insert → Embed → Embed code**. This is NOT an iframe URL and NOT a GitHub Pages URL.
+
+- Run `node tools/build-embed.cjs`.
+- Copy all text in `dist/lemon-clash-online-lab-embed.txt` (identical to `.html`) into the Google Sites HTML code input.
+- CSS, gameplay rules and application JS must be inline. The HTML must not reference separate game files, GitHub Pages, remote iframe sources, or repository paths.
+- Firebase compat SDK fetched from gstatic and real-time Firebase network traffic are still needed; the game is a single HTML file, **not a network-free offline online mode**.
+- The Google Sites-generated iframe may have different origin, sandbox, storage and network policy from a direct browser tab. Test the pasted HTML as an iframe `srcdoc` in WebKit, then test in actual Google Sites school iPad. Never claim a URL-based iframe test proves pasted-code support.
+- Never switch publishing methods without user approval.
+
 ## Setup required before two-device testing
 
 1. Create a separate Firebase test project, register a Web app and enable Anonymous Authentication.
