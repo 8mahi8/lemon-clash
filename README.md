@@ -1,35 +1,43 @@
 # 🍋 LEMON CLASH
 
-CCレモン型の同時読み合い × 10枚の使い切り特殊カード。学校iPad Safari・Google Sitesでの友達対戦を目標に開発中。
+CCレモン型の同時読み合い × 11枚の使い切り特殊カード（開発版）。学校iPad Safari・Google Sitesでの友達対戦を目標に開発中。
 
 ## 現在の状態（v0.1 / オフライン・ルール試作）
 
 - ✅ HTML + JavaScript。スマホと横向きiPadに対応するタップUI
 - ✅ HP5 / 初期エネルギー1 / エネルギー上限7
 - ✅ チャージ(+1)、通常攻撃(1消費・1ダメージ)、通常防御(無料・成功時のエネルギー獲得なし)
-- ✅ 全10種類のカードを各1枚所持、コストを払って使用後は使い切り
+- ✅ 全11種類のカードを各1枚所持、コストを払って使用後は使い切り
 - ✅ 行動を秘密で選び、双方の確定後に同時解決
 - ✅ BOT戦、1台で端末を交代する2人対戦
 - ✅ Node標準テストランナーによるカード相性テスト
-- ⬜ **2台間のオンライン対戦は未実装**
+- ⚠️ **オンライン1vs1の開発用コードは追加済み。2端末での実動作は未検証で未公開**
 - ⬜ 学校iPad + Google Sites + Firebase 実環境での確認は未実施
 
-## ブラウザで試す
+## 学校への公開方法：Google SitesにHTML全文を貼り付ける
 
-GitHub Pages を Settings > Pages > Deploy from a branch > main / (root) で有効化した場合：
-https://8mahi8.github.io/lemon-clash/
+**正式な配布方法はGoogle Sitesの「挿入 → 埋め込む → 埋め込みコード」に、ゲームHTMLの全文を貼る方式。** GitHub PagesのURL貼り付けや外部iframe参照は配布方法ではありません。
 
-開発用ローカルHTTPサーバーを使う場合はリポジトリルートを配信してください。外部サービスやビルドツールは不要です。
-
-## Google Sites用のHTML全文を作る
-
-Node.jsがある環境で：
+HTML全文は以下を実行して生成：
 
     node tools/build-embed.cjs
 
-出力は dist/lemon-clash-embed.html。この**ファイルの内容全文**をGoogle Sitesの「埋め込む > 埋め込みコード」に貼ります。GitHub Pagesへのiframeリンク埋め込みとは別方式です。
+- **オフライン版の貼り付け元：** `dist/lemon-clash-embed.txt`
+- **オンライン開発版の貼り付け元：** `dist/lemon-clash-online-lab-embed.txt`
 
-GitHub Actions の **Lemon Clash checks** が成功した場合、同じHTMLはワークフローの lemon-clash-google-sites-html アーティファクトからも取得できます。現在の埋め込み版はオフライン試作版です。
+同名の `.html` ファイルと `.txt` ファイルは**内容が完全一致**し、CSS・ゲーム用JavaScript・ルールをファイル内に含みます。Google Sitesの「埋め込みコード」に**ファイル内容全体**を貼り付けます。GitHubのファイルURL、GitHub PagesのURL、HTMLファイル名、ダウンロードURLを貼るのではありません。
+
+オンライン版は貼っただけでは通信できません。専用のFirebaseテスト環境（Web設定、匿名認証、Realtime Database Rules）が必要で、Firebase SDK読み込みとデータ同期にネットワーク接続を使用します。**既存BRAWL/小国戦線のFirebaseを流用しない。**
+
+Google Sites風のコード貼り付け検証：
+
+    node --test tests/sites-paste.test.cjs
+
+WebKitの貼り付け模擬テスト：
+
+    node tests/sites-paste-webkit.cjs
+
+この検証はGoogle Sites本体や学校iPadの実機動作を保証しません。検証完了まで公開版は更新しません。GitHub Pagesは開発中の確認リンクとして使える場合がありますが、学校向けの埋め込み手段とは区別します。
 
 ## カード一覧
 
@@ -45,6 +53,7 @@ GitHub Actions の **Lemon Clash checks** が成功した場合、同じHTMLは�
 | 3 | 粉砕 | 通常防御に2ダメージ、その他は1 |
 | 4 | 終焉の一撃 | 2ダメージ。通常防御には1 |
 | 4 | オールイン | 3ダメージ。通常防御で完全に防がれる |
+| 7 | 終局宣告 | 発動で即勝利。防御不可。両者同時使用は引き分け |
 
 各カードは効果が失敗・無効化されてもコストを払い、使用済みになります。攻撃同士では両方の攻撃が成立し、両者HPが0になれば引き分け。
 
@@ -58,7 +67,7 @@ GitHub Actions の **Lemon Clash checks** が成功した場合、同じHTMLは�
 - `firebase/lemon-clash-lab.rules.json`: **専用テスト環境だけ**の権限ルール。
 - `tests/online-protocol.test.cjs`: コミット改ざん検出等の単体テスト。
 - `tests/online-emulator-webkit.cjs`: 2台WebKit＋ローカルFirebaseエミュレーターの統合試験。
-- `dist/lemon-clash-online-lab-embed.html`: ビルド時生成のオンライン用Google Sites埋め込みHTML全文。
+- `dist/lemon-clash-online-lab-embed.txt`: **Google Sitesの埋め込みコード欄にそのまま貼り付けるHTML全文**（同名 `.html` と同一内容）。
 
 **重要：まだオンライン対戦は公開していない。** `src/firebase-config.js` はnullのままで、認証・通信が開始されない。専用Firebaseテストプロジェクトの準備とWebKit/エミュレーターでの実テストが必要。詳しい手順は `docs/ONLINE_1V1.md`。既存BRAWL・小国戦線のFirebase設定は流用しない。
 
