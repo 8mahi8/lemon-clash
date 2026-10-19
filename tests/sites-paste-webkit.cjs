@@ -54,8 +54,9 @@ const server=http.createServer((_req,res)=>{
       }finally{await a.context.close()}
       const b=await pastedFrame(browser,online,profile.width,profile.height);
       try{
-        await b.inner.locator("#onlineHost").click();
-        assert.match(await b.inner.locator("#onlineError").innerText(),/未設定/);
+        assert.equal(await b.inner.locator("#onlineHost").isVisible(),true);
+        assert.equal(await b.inner.locator("#onlineJoin").isVisible(),true);
+        assert.match(await b.inner.locator("#onlineError").innerText(),/部屋を作る/);
         assert.deepEqual(b.errors,[]);
       }finally{await b.context.close()}
       console.log("PASS pasted HTML full code in iframe.srcdoc at "+profile.width+"x"+profile.height);
