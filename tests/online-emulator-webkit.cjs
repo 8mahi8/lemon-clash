@@ -11,6 +11,8 @@ const path = require("node:path");
 const http = require("node:http");
 const { webkit } = require("playwright-core");
 const root = path.resolve(__dirname, "..");
+const pastedHtml = fs.readFileSync(path.join(root, "dist", "lemon-clash-online-lab-embed.txt"), "utf8");
+if (/<script\b[^>]*\bsrc\s*=/i.test(pastedHtml)) throw Error("Paste code cannot require separate JS files");
 const sdkDir = path.join(root, "artifacts", "firebase-sdk");
 if (process.env.FIREBASE_DATABASE_EMULATOR_HOST !== "127.0.0.1:9000" ||
     process.env.FIREBASE_AUTH_EMULATOR_HOST !== "127.0.0.1:9099") {
@@ -29,7 +31,12 @@ const config = {
 };
 const server = http.createServer((req,res) => {
   const url = (req.url||"/").split("?")[0];
-  const target = path.resolve(root, url === "/" ? "online.html" : decodeURIComponent(url).replace(/^\/+/,""));
+  if (url === "/") {
+    res.setHeader("Content-Type","text/html; charset=utf-8");
+    res.end('<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0"></body></html>');
+    return;
+  }
+  const target = path.resolve(root, decodeURIComponent(url).replace(/^\/+/, ""));
   if(!target.startsWith(root+path.sep) || !fs.existsSync(target) || !fs.statSync(target).isFile()){
     res.writeHead(404);res.end();return;
   }
@@ -58,7 +65,19 @@ async function client(browser) {
   await page.route(/^https:\/\/(?!www\.gstatic\.com).*?(firebaseio\.com|firebasedatabase\.app|googleapis\.com)/,
     route=>route.abort("blockedbyclient"));
   await page.goto("http://127.0.0.1:8784/");
-  return {context,page,errors};
+  // Actual Google Sites-style HTML CODE paste: embed raw complete HTML via srcdoc.
+  await page.evaluate(source => {
+    const iframe = document.createElement("iframe");
+    iframe.id="google-sites-paste";
+    iframe.setAttribute("sandbox","allow-scripts allow-same-origin");
+    iframe.style.cssText="border:0;width:100vw;height:100vh";
+    iframe.srcdoc=source;
+    document.body.append(iframe);
+  },pastedHtml);
+  const iframeHandle = await page.$("#google-sites-paste");
+  const embeddedFrame = await iframeHandle.contentFrame();
+  await embeddedFrame.locator("#onlineHost").waitFor({state:"visible",timeout:20000});
+  return {context,page:embeddedFrame,errors};
 }
 (async()=>{
   await new Promise(ok=>server.listen(8784,"127.0.0.1",ok));
