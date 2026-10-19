@@ -162,6 +162,13 @@ async function client(browser) {
     ]);
     assert.equal((await host.page.locator("#myHp").innerText()).includes("4/5"),true);
     assert.equal((await guest.page.locator("#opHp").innerText()).includes("4/5"),true);
+    // A returning host must resume seat 1P rather than being rejected or taking 2P.
+    await host.page.locator("#quit").click();
+    await host.page.locator("#roomInput").fill(code);
+    await host.page.locator("#onlineJoin").click();
+    await host.page.locator("#battle").waitFor({state:"visible",timeout:30000});
+    assert.match(await host.page.locator("#myName").innerText(),/1P/);
+    assert.match(await guest.page.locator("#myName").innerText(),/2P/);
     assert.equal((await host.page.locator("#myEn").innerText()).includes("1/7"),true);
     // Existing guest can leave and rejoin the SAME room without taking another seat.
     await guest.page.locator("#quit").click();
