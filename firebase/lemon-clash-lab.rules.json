@@ -10,11 +10,11 @@
         "rounds": {
           "$turn": {
             "host": {
-              ".write": "auth != null && auth.uid === root.child('lemonClashRoomsV1').child($room).child('hostUid').val() && ( (!data.exists() && newData.child('hash').isString() && newData.child('hash').val().matches(/^[0-9a-f]{64}$/) && !newData.child('reveal').exists()) || (data.child('hash').exists() && !data.child('reveal').exists() && newData.child('hash').val() === data.child('hash').val() && newData.child('reveal').child('action').isString() && newData.child('reveal').child('nonce').isString()) )",
+              ".write": "auth != null && auth.uid === root.child('lemonClashRoomsV1').child($room).child('hostUid').val() && ( (!data.exists() && newData.child('hash').isString() && newData.child('hash').val().matches(/^[0-9a-f]{64}$/) && !newData.child('reveal').exists()) || (data.child('hash').exists() && root.child('lemonClashRoomsV1').child($room).child('rounds').child($turn).child('guest').child('hash').exists() && !data.child('reveal').exists() && newData.child('hash').val() === data.child('hash').val() && newData.child('reveal').child('action').isString() && newData.child('reveal').child('nonce').isString()) )",
               ".validate": "newData.hasChildren(['hash'])"
             },
             "guest": {
-              ".write": "auth != null && auth.uid === root.child('lemonClashRoomsV1').child($room).child('guestUid').val() && ( (!data.exists() && newData.child('hash').isString() && newData.child('hash').val().matches(/^[0-9a-f]{64}$/) && !newData.child('reveal').exists()) || (data.child('hash').exists() && !data.child('reveal').exists() && newData.child('hash').val() === data.child('hash').val() && newData.child('reveal').child('action').isString() && newData.child('reveal').child('nonce').isString()) )",
+              ".write": "auth != null && auth.uid === root.child('lemonClashRoomsV1').child($room).child('guestUid').val() && ( (!data.exists() && newData.child('hash').isString() && newData.child('hash').val().matches(/^[0-9a-f]{64}$/) && !newData.child('reveal').exists()) || (data.child('hash').exists() && root.child('lemonClashRoomsV1').child($room).child('rounds').child($turn).child('host').child('hash').exists() && !data.child('reveal').exists() && newData.child('hash').val() === data.child('hash').val() && newData.child('reveal').child('action').isString() && newData.child('reveal').child('nonce').isString()) )",
               ".validate": "newData.hasChildren(['hash'])"
             }
           }
