@@ -280,3 +280,22 @@ test("room deletion clears both connected clients and returns to lobby",async()=
   assert.equal(guest.visible("battle"),false);
   assert.deepEqual(db.failures,[]);
 });
+
+
+test("rejects a tampered initial match before either player can play",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"forged-host"),guest=client(db,"forged-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>/^[0-9]{6}$/.test(host.el("lobbyCode").textContent),"tampered-room code");
+  const code=host.el("lobbyCode").textContent;
+  const roomPath="lemonClashRoomsV1/"+code;
+  const room=deepCopy(db.get(roomPath));
+  room.states["1"].players[0].hp=99;
+  db.put(roomPath,room);
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>/開始時のゲーム状態が正しくありません/.test(guest.el("onlineError").textContent),
+    "reject forged starting HP");
+  assert.equal(guest.visible("battle"),false);
+  assert.deepEqual(db.failures,[]);
+});
