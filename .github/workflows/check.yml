@@ -18,6 +18,7 @@ jobs:
         run: |
           node --check src/rules.js
           node --check src/app.js
+          node --check tests/ui-webkit.cjs
           node --check tools/build-embed.cjs
       - name: Card rules tests
         run: node --test tests/*.test.cjs
@@ -32,3 +33,27 @@ jobs:
         with:
           name: lemon-clash-google-sites-html
           path: dist/lemon-clash-embed.html
+
+  ipad-ui-webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install WebKit test runner
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps webkit
+      - name: Build standalone Google Sites HTML
+        run: node tools/build-embed.cjs
+      - name: iPad, pass-and-play and Google Sites-like iframe checks
+        run: node tests/ui-webkit.cjs
+      - name: Save screenshots even if UI checks fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lemon-clash-ipad-ui-screenshots
+          path: artifacts/ui-screens
+          if-no-files-found: ignore
