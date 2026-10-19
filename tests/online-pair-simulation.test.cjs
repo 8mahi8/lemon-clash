@@ -165,7 +165,13 @@ function client(db,uid){
     async signInAnonymously(){return {user:{uid}};},
     useEmulator(){}
   };
-  const database={ref:path=>db.ref(uid,path),useEmulator(){}};
+  const database={
+    // Match the actual shared-RTDB client identifier, not the simulated Auth UID.
+    ref:path=>db.ref(
+      window.LEMON_FIREBASE_CONFIG.mode==="shared-rtdb" ?
+        window.localStorage.getItem("lemon-clash-player-id-v1") : uid,path),
+    useEmulator(){}
+  };
   const app={auth:()=>auth,database:()=>database};
   const firebase={
     apps:[],auth:()=>auth,database:()=>database,
