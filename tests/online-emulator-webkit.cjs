@@ -169,6 +169,24 @@ async function client(browser) {
     await host.page.locator("#battle").waitFor({state:"visible",timeout:30000});
     assert.match(await host.page.locator("#myName").innerText(),/1P/);
     assert.match(await guest.page.locator("#myName").innerText(),/2P/);
+    // Finish a WHOLE match rather than stopping at a two-turn smoke test.
+    // Host alternates charge/attack; guest charges and eventually loses all 5 HP.
+    for(let turn=3;turn<=9;turn++){
+      await host.page.locator("#roundResult button").click();
+      await guest.page.locator("#roundResult button").click();
+      const hostMove=turn%2===0 ? "チャージ" : "通常攻撃";
+      await host.page.locator('#basics .move[aria-label^="'+hostMove+'"]').click();
+      await guest.page.locator('#basics .move[aria-label^="チャージ"]').click();
+      await host.page.locator("#confirm").click();
+      await guest.page.locator("#confirm").click();
+      await Promise.all([
+        host.page.locator("#roundResult").waitFor({state:"visible",timeout:30000}),
+        guest.page.locator("#roundResult").waitFor({state:"visible",timeout:30000})
+      ]);
+    }
+    assert.match(await host.page.locator("#roundResult h2").innerText(),/勝利/);
+    assert.match(await guest.page.locator("#roundResult h2").innerText(),/敗北/);
+    assert.equal((await guest.page.locator("#myHp").innerText()).includes("0/5"),true);
     assert.equal((await host.page.locator("#myEn").innerText()).includes("1/7"),true);
     // Existing guest can leave and rejoin the SAME room without taking another seat.
     await guest.page.locator("#quit").click();
