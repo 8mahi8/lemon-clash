@@ -243,12 +243,12 @@ test("independent simulated clients complete nine turns, reject strangers and re
       await guest.click("quit");
       guest.el("roomInput").value=code;
       await guest.click("onlineJoin");
-      await waitUntil(()=>guest.visible("roundResult"),"guest returns");
+      await waitUntil(()=>guest.visible("battle")&&guest.visible("roundResult"),"guest returns");
       assert.match(guest.el("myName").textContent,/2P/);
       await host.click("quit");
       host.el("roomInput").value=code;
       await host.click("onlineJoin");
-      await waitUntil(()=>host.visible("roundResult"),"host returns");
+      await waitUntil(()=>host.visible("battle")&&host.visible("roundResult"),"host returns");
       assert.match(host.el("myName").textContent,/1P/);
     }
   }
