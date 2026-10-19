@@ -97,6 +97,13 @@ async function client(browser) {
       host.page.locator("#battle").waitFor({state:"visible",timeout:30000}),
       guest.page.locator("#battle").waitFor({state:"visible",timeout:30000})
     ]);
+    // A third anonymous player cannot read/join an occupied private room.
+    const stranger=await client(browser);
+    contexts.push(stranger.context);
+    await stranger.page.locator("#roomInput").fill(code);
+    await stranger.page.locator("#onlineJoin").click();
+    await stranger.page.locator("#onlineError").getByText(/部屋参加失敗/).waitFor({timeout:20000});
+    assert.equal(await stranger.page.locator("#battle").isVisible(),false);
     const hostUid=await host.page.evaluate(()=>firebase.auth().currentUser.uid);
     const guestUid=await guest.page.evaluate(()=>firebase.auth().currentUser.uid);
     assert.notEqual(hostUid,guestUid,"browser contexts must use independent anonymous users");
@@ -156,6 +163,13 @@ async function client(browser) {
     assert.equal((await host.page.locator("#myHp").innerText()).includes("4/5"),true);
     assert.equal((await guest.page.locator("#opHp").innerText()).includes("4/5"),true);
     assert.equal((await host.page.locator("#myEn").innerText()).includes("1/7"),true);
+    // Existing guest can leave and rejoin the SAME room without taking another seat.
+    await guest.page.locator("#quit").click();
+    await guest.page.locator("#roomInput").fill(code);
+    await guest.page.locator("#onlineJoin").click();
+    await guest.page.locator("#battle").waitFor({state:"visible",timeout:30000});
+    await guest.page.locator("#roundResult").waitFor({state:"visible",timeout:30000});
+    assert.equal((await guest.page.locator("#opHp").innerText()).includes("4/5"),true);
     assert.deepEqual(host.errors,[]);
     assert.deepEqual(guest.errors,[]);
     console.log("PASS two WebKit clients + anonymous Auth + RTDB commit/reveal + state agreement + authz");
