@@ -19,12 +19,24 @@
     selected = null;
     firstMove = null;
     inResults = false;
+    resetCardDetail();
     $("home").classList.add("hidden");
     $("battle").classList.remove("hidden");
     $("roundResult").classList.add("hidden");
     $("pickArea").classList.remove("hidden");
     $("handoff").classList.add("hidden");
     render();
+  }
+
+  function resetCardDetail() {
+    const detail = $("cardDetail");
+    detail.replaceChildren();
+    const title = document.createElement("strong");
+    title.textContent = "カードを選ぼう";
+    const description = document.createElement("p");
+    description.textContent = "カードをタップすると持ち上がり、ここに能力が表示されます。";
+    detail.append(title, description);
+    $("selectedDetail").textContent = "行動を選択してください";
   }
 
   function status() {
@@ -90,8 +102,10 @@
     const player = game.players[acting];
     const basics = $("basics");
     const cards = $("cards");
+    const cardScroll = cards.scrollLeft;
     basics.replaceChildren(...BASIC_ORDER.map(id => moveButton(id, player)));
     cards.replaceChildren(...R.CARDS.map(card => moveButton(card.id, player)));
+    cards.scrollLeft = cardScroll;
     $("confirm").disabled = !selected || !R.validMove(player, selected);
     if (!selected) $("selectedDetail").textContent = "行動を選択してください";
   }
@@ -134,7 +148,7 @@
       seal: 8, volley: 7, crush: 11, final: 7, allin: 7, judgment: 100
     };
     if (player.energy === 0) { weights.charge = 90; weights.guard = 10; }
-    if (player.energy >= 6) weights.charge = 0;
+    if (player.energy >= R.MAX_ENERGY) weights.charge = 0;
     if (enemy.energy === 0) {
       weights.guard = 2;
       weights.attack = 24;
@@ -169,6 +183,7 @@
     selected = null;
     if (mode === "local" && acting === 0) {
       firstMove = move;
+      resetCardDetail(); // 直前の選択情報を次の人に見せない
       $("handoffTitle").textContent = "PLAYER 2 に端末を渡そう";
       $("handoffBody").textContent = "PLAYER 1 の選択は確定したよ。PLAYER 2 は見ないで選択してね。";
       $("handoffProceed").textContent = "PLAYER 2 の選択へ";
@@ -224,6 +239,7 @@
         inResults = false;
         acting = 0;
         selected = null;
+        resetCardDetail();
         render();
       });
     } else {
