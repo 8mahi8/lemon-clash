@@ -293,7 +293,11 @@
     }
   }
   async function synchronize(room) {
-    if (!room) throw new Error("対戦ルームが削除されました");
+    if (!room) {
+      leave();
+      error("対戦ルームがなくなりました。新しい部屋を作成してください");
+      return;
+    }
     if (room.protocol !== P.VERSION) throw new Error("対戦プロトコルのバージョンが異なります");
     if (room.hostUid !== uid && room.guestUid !== uid) {
       throw new Error("このルームの参加権限がありません");
@@ -406,7 +410,10 @@
       script.src = LIB + name;
       script.dataset.firebaseSdk = name;
       script.onload = resolve;
-      script.onerror = () => reject(new Error("Firebase SDKを読み込めません（学校ネットワーク制限の可能性）"));
+      script.onerror = () => {
+        script.remove();
+        reject(new Error("Firebase SDKを読み込めません（学校ネットワーク制限の可能性）"));
+      };
       document.head.append(script);
     });
   }
