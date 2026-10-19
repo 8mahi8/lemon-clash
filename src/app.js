@@ -8,6 +8,7 @@
   let mode = "bot";
   let acting = 0;
   let selected = null;
+  let preview = null;
   let firstMove = null;
   let inResults = false;
   const BASIC_ORDER = ["charge", "attack", "guard"];
@@ -17,6 +18,7 @@
     game = R.createGame();
     acting = 0;
     selected = null;
+    preview = null;
     firstMove = null;
     inResults = false;
     resetCardDetail();
@@ -48,6 +50,8 @@
     $("myEn").textContent = "⚡ " + self.energy;
     $("opHp").textContent = "♥ " + foe.hp;
     $("opEn").textContent = "⚡ " + foe.energy + "/7";
+    $("opMeter").classList.toggle("danger", foe.energy >= R.MAX_ENERGY);
+    $("opWarning").classList.toggle("hidden", foe.energy < R.MAX_ENERGY);
     $("myHp").textContent += "/5";
     $("opHp").textContent += "/5";
     $("myEn").textContent += "/7";
@@ -63,10 +67,10 @@
     const canPlay = R.validMove(player, id);
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "move cost" + move.cost + (selected === id ? " selected" : "");
+    btn.className = "move cost" + move.cost + (preview === id ? " selected" : "");
     btn.disabled = used;
     if (!canPlay && !used) btn.classList.add("unaffordable");
-    btn.setAttribute("aria-pressed", selected === id ? "true" : "false");
+    btn.setAttribute("aria-pressed", preview === id ? "true" : "false");
     btn.setAttribute("aria-label", move.name + " 消費" + move.cost + (used ? " 使用済み" : ""));
     const badge = document.createElement("span");
     badge.className = "cost";
@@ -82,6 +86,7 @@
     desc.textContent = used ? "使用済み" : move.description;
     btn.append(badge, icon, name, desc);
     btn.addEventListener("click", () => {
+      preview = id;
       if (!canPlay) {
         $("selectedDetail").textContent = "エネルギーが足りません（必要 ⚡" + move.cost + "）";
         $("confirm").disabled = true;
@@ -181,6 +186,7 @@
     if (!game || inResults || !selected || !R.validMove(game.players[acting], selected)) return;
     const move = selected;
     selected = null;
+    preview = null;
     if (mode === "local" && acting === 0) {
       firstMove = move;
       resetCardDetail(); // 直前の選択情報を次の人に見せない
@@ -239,6 +245,7 @@
         inResults = false;
         acting = 0;
         selected = null;
+        preview = null;
         resetCardDetail();
         render();
       });
@@ -262,7 +269,7 @@
     render();
   });
   $("quit").addEventListener("click", () => {
-    game = null; firstMove = null; selected = null;
+    game = null; firstMove = null; selected = null; preview = null;
     $("handoff").classList.add("hidden");
     $("battle").classList.add("hidden");
     $("home").classList.remove("hidden");
