@@ -259,3 +259,24 @@ test("independent simulated clients complete nine turns, reject strangers and re
   assert.deepEqual(final.players.map(player=>player.hp),[4,0]);
   assert.deepEqual(db.failures,[]);
 });
+
+
+test("room deletion clears both connected clients and returns to lobby",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"deleted-host"),guest=client(db,"deleted-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>/^[0-9]{6}$/.test(host.el("lobbyCode").textContent),"deleted-room code");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"deleted-room join");
+  const path="lemonClashRoomsV1/"+code;
+  db.put(path,null);
+  db.notify(path);
+  await waitUntil(()=>host.visible("home")&&guest.visible("home"),"deleted-room recovery");
+  assert.match(host.el("onlineError").textContent,/なくなりました/);
+  assert.match(guest.el("onlineError").textContent,/なくなりました/);
+  assert.equal(host.visible("battle"),false);
+  assert.equal(guest.visible("battle"),false);
+  assert.deepEqual(db.failures,[]);
+});
