@@ -21,7 +21,7 @@
         },
         "states": {
           "$turn": {
-            ".write": "auth != null && !data.exists() && (auth.uid === root.child('lemonClashRoomsV1').child($room).child('hostUid').val() || auth.uid === root.child('lemonClashRoomsV1').child($room).child('guestUid').val()) && newData.child('turn').val() >= 2",
+            ".write": "auth != null && !data.exists() && (auth.uid === root.child('lemonClashRoomsV1').child($room).child('hostUid').val() || auth.uid === root.child('lemonClashRoomsV1').child($room).child('guestUid').val()) && newData.child('turn').val() === ($turn * 1) && newData.child('turn').val() >= 2",
             ".validate": "newData.hasChildren(['turn', 'players'])"
           }
         }
