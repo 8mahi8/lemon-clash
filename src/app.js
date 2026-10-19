@@ -52,7 +52,8 @@
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "move cost" + move.cost + (selected === id ? " selected" : "");
-    btn.disabled = !canPlay;
+    btn.disabled = used;
+    if (!canPlay && !used) btn.classList.add("unaffordable");
     btn.setAttribute("aria-pressed", selected === id ? "true" : "false");
     btn.setAttribute("aria-label", move.name + " 消費" + move.cost + (used ? " 使用済み" : ""));
     const badge = document.createElement("span");
@@ -69,14 +70,18 @@
     desc.textContent = used ? "使用済み" : move.description;
     btn.append(badge, icon, name, desc);
     btn.addEventListener("click", () => {
-      selected = id;
+      if (!canPlay) {
+        $("selectedDetail").textContent = "エネルギーが足りません（必要 ⚡" + move.cost + "）";
+        $("confirm").disabled = true;
+        selected = null;
+      } else selected = id;
       renderMoves();
       $("selectedDetail").textContent = move.name + "： " + move.description;
       $("cardDetail").replaceChildren();
       const title = document.createElement("strong"); title.textContent = move.icon + " " + move.name + " · ⚡" + move.cost;
       const detail = document.createElement("p"); detail.textContent = move.description + (R.isCard(id) ? "（使い切り）" : "（何度でも使用可能）");
       $("cardDetail").append(title, detail);
-      $("confirm").disabled = false;
+      $("confirm").disabled = !canPlay;
     });
     return btn;
   }
@@ -126,7 +131,7 @@
     const weights = {
       charge: 20, attack: 20, guard: 15,
       feint: 7, drain: 9, read: 7, pierce: 10, counter: 11,
-      seal: 8, volley: 7, crush: 11, final: 7, allin: 7
+      seal: 8, volley: 7, crush: 11, final: 7, allin: 7, judgment: 100
     };
     if (player.energy === 0) { weights.charge = 90; weights.guard = 10; }
     if (player.energy >= 6) weights.charge = 0;
@@ -141,7 +146,7 @@
       weights.guard = 12;
       weights.judgment = 30;
     }
-    if (player.energy === 7) weights.judgment = 100;
+    if (player.energy === 7 && moves.includes("judgment")) return "judgment";
     if (enemy.hp === 1) {
       weights.pierce = 25;
       weights.crush = 16;
