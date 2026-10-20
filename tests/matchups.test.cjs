@@ -9,7 +9,7 @@ test("all legal one-turn matchups remain within game bounds",()=>{
   for(const x of ids)for(const y of ids){
    if(!R.validMove(g.players[0],x)||!R.validMove(g.players[1],y))continue;
    const next=R.resolveTurn(g,x,y);count++;
-   for(const p of next.players){assert.ok(p.hp>=0&&p.hp<=5);assert.ok(p.energy>=0&&p.energy<=7);assert.equal(new Set(p.used).size,p.used.length)}
+   for(const p of next.players){assert.ok(p.hp>=0&&p.hp<=R.START_HP);assert.ok(p.energy>=0&&p.energy<=7);assert.equal(new Set(p.used).size,p.used.length)}
   }
  }
  assert.ok(count>6000);
