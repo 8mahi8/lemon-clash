@@ -98,6 +98,21 @@ test("judgment wins regardless of opponent action", () => {
     assert.equal(R.resolveTurn(g, "judgment", id).winner, 0);
   }
 });
+test("judgment wins even if a simultaneous attack would otherwise be lethal", () => {
+  for (const counterMove of ["attack", "pierce", "volley", "crush", "final", "allin"]) {
+    // Test BOTH seats; HP 1 ensures every unblocked attack is lethal.
+    for (const declaring of [0, 1]) {
+      const g = withEnergy(7);
+      g.players[0].hp = g.players[1].hp = 1;
+      const a = declaring === 0 ? "judgment" : counterMove;
+      const b = declaring === 1 ? "judgment" : counterMove;
+      const result = R.resolveTurn(g, a, b);
+      assert.equal(result.winner, declaring, "judgment must win against " + counterMove);
+      assert.equal(result.players[declaring].hp, 1, "the declaring player must not die");
+      assert.match(result.history[0].messages.join(" "), /終局宣告が成立/);
+    }
+  }
+});
 test("simultaneous judgment is draw and requires seven energy", () => {
   assert.equal(R.validMove(game().players[0], "judgment"), false);
   assert.equal(R.resolveTurn(withEnergy(7), "judgment", "judgment").winner, "draw");
