@@ -31,8 +31,36 @@
     .move.cost1{background:linear-gradient(150deg,#223d56,#24343e)}.move.cost2{background:linear-gradient(150deg,#264238,#22373a)}.move.cost3{background:linear-gradient(150deg,#4e402e,#2e3434)}.move.cost7{background:linear-gradient(150deg,#8d6c2a,#42351d);border-color:#e8ca76;color:#fff1c4}.move.cost4{background:linear-gradient(150deg,#512d39,#33333b)}
     .controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:17px}.controls .btn{min-width:190px}.log{margin-top:12px;padding:10px 14px}.log summary{cursor:pointer;font-weight:850;list-style-position:inside}.log[open] #logList{margin-top:8px}
     .logrow{border-top:1px solid var(--line);padding:9px 1px;font-size:12px;color:var(--muted)}.logrow strong{color:var(--text)}
-    .result{text-align:center;padding:25px;border:1px solid var(--line);background:#1b2b30;border-radius:20px;margin-top:20px}.result h2{font-size:29px;margin:0 0 10px;color:var(--lime)}.result p{color:var(--muted)}
-    .turnReveal{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.revealPiece{background:#25393e;border-radius:15px;padding:16px;text-align:center}.revealPiece .big{font-size:30px}.revealPiece b{display:block}.revealPiece small{color:var(--muted)}
+    /* Phase 3: readable, silent simultaneous-reveal presentation; no gameplay changes. */
+    .result{text-align:center;padding:22px;border:1px solid var(--line);background:linear-gradient(155deg,#20373a,#15252b);border-radius:20px;margin-top:15px}
+    .result h2{font-size:clamp(23px,3.6vw,33px);margin:0 0 9px;color:var(--lime);letter-spacing:.035em}
+    .result p{color:var(--muted)}
+    .result-win{border-color:#86c58d;background:linear-gradient(155deg,#284a39,#182f2f)}
+    .result-win h2{color:#deff9a;text-shadow:0 0 16px #a8e66b66}
+    .result-lose{border-color:#83545c;background:linear-gradient(155deg,#3b3035,#20262d)}
+    .result-lose h2{color:#ffb4bf}
+    .result-draw{border-color:#af9766}.result-draw h2{color:#f9cd81}
+    .result-enter{animation:result-enter .25s ease-out both}
+    @keyframes result-enter{from{opacity:.35;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+    .turnReveal{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px auto 0;max-width:650px}
+    .revealPiece{min-width:0;background:#25393e;border:1px solid #3b5559;border-radius:15px;padding:12px 10px;text-align:center}
+    .revealPiece.reveal-me{background:#243b37;border-color:#547668}
+    .revealPiece.reveal-op{background:#3b3035;border-color:#805860}
+    .revealPiece .big{display:block;font-size:clamp(27px,4.5vw,38px);line-height:1.25;margin:3px 0}
+    .revealPiece b{display:block;font-size:clamp(12px,2vw,16px);overflow-wrap:anywhere}
+    .revealPiece small{display:block;color:#c0d0ce;font-size:11px}
+    .revealOwner{font-weight:850;letter-spacing:.05em}
+    .resultInfo{font-size:12px;line-height:1.7;margin:12px auto 16px;max-width:650px}
+    .result .btn{margin:2px 5px 4px;max-width:100%}
+    .fighter.critical{border-color:#cc7881;background:#322a32}
+    .fighter.critical .hp{color:#ffc4cf;text-shadow:0 0 10px #fa72777a}
+    #confirm:not(:disabled){box-shadow:0 0 0 2px #def67733,0 8px 17px #def67721}
+    @media(max-height:570px) and (orientation:landscape){
+      .result{padding:11px;margin-top:8px}.result h2{font-size:22px;margin-bottom:3px}
+      .turnReveal{gap:7px;margin-top:7px}.revealPiece{padding:6px 9px}
+      .revealPiece .big{font-size:25px;margin:0}.resultInfo{margin:7px auto 10px}
+    }
+    @media(prefers-reduced-motion:reduce){.result-enter{animation:none}}
     .overlay{position:fixed;inset:0;z-index:99;background:#0d1719;display:flex;align-items:center;justify-content:center;padding:18px}.overlay .panel{max-width:510px;text-align:center;padding:37px}
     .overlay h2{font-size:30px}.overlay p{color:var(--muted)}.hidden{display:none!important}
     @media(max-width:720px){.app{padding:12px 10px 28px}.panel{padding:13px}.cards{justify-content:flex-start;padding-top:30px}.cards .move{flex-basis:82px;width:82px;margin-left:-12px}.actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.move{padding:10px;min-height:115px}.move .movename{font-size:12px}.move .effect{font-size:10px}.scoreboard{gap:5px}.fighter{padding:9px}.fighter .numbers{font-size:16px;gap:6px}.vs{font-size:15px}.intro{grid-template-columns:1fr}.hero{padding:35px 12px}}
@@ -82,9 +110,9 @@
     </div>
     <main id="battle" class="hidden">
       <div class="scoreboard">
-        <div class="fighter me"><div class="name" id="myName">PLAYER 1</div><div class="numbers"><span class="hp" id="myHp"></span><span class="energy" id="myEn"></span></div><div class="energyMeter" id="myMeter"></div></div>
+        <div class="fighter me" id="myFighter"><div class="name" id="myName">PLAYER 1</div><div class="numbers"><span class="hp" id="myHp"></span><span class="energy" id="myEn"></span></div><div class="energyMeter" id="myMeter"></div></div>
         <div class="vs">VS</div>
-        <div class="fighter opponent"><div class="name" id="opName">PLAYER 2</div><div class="numbers"><span class="hp" id="opHp"></span><span class="energy" id="opEn"></span></div><div class="energyMeter" id="opMeter"></div><div class="energyWarning hidden" id="opWarning">⚠ 終局宣告 発動可能</div></div>
+        <div class="fighter opponent" id="opFighter"><div class="name" id="opName">PLAYER 2</div><div class="numbers"><span class="hp" id="opHp"></span><span class="energy" id="opEn"></span></div><div class="energyMeter" id="opMeter"></div><div class="energyWarning hidden" id="opWarning">⚠ 終局宣告 発動可能</div></div>
       </div>
       <div class="message" id="msg"></div>
       <div id="pickArea">
