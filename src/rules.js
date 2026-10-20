@@ -103,14 +103,24 @@
       }
       incoming[target] += amount;
     }
+    // 終局宣告は発動した時点で勝敗が確定する。
+    // 同じターンの攻撃で使用者のHPが0になったように表示しない。
+    // 終局宣告同士の同時発動は現行仕様どおり引き分け。
+    const judgmentA = ids[0] === "judgment";
+    const judgmentB = ids[1] === "judgment";
+    if (judgmentA !== judgmentB) {
+      const declaring = judgmentA ? 0 : 1;
+      incoming[declaring] = 0;
+      log.push("P" + (declaring + 1) + "の終局宣告が成立！ 即時勝利");
+    }
     players.forEach(function (p, i) {
       p.energy = clampEnergy(p.energy + gain[i]);
       p.hp = Math.max(0, p.hp - incoming[i]);
     });
     let winner = null;
-    if (ids[0] === "judgment" && ids[1] === "judgment") winner = "draw";
-    else if (ids[0] === "judgment") winner = 0;
-    else if (ids[1] === "judgment") winner = 1;
+    if (judgmentA && judgmentB) winner = "draw";
+    else if (judgmentA) winner = 0;
+    else if (judgmentB) winner = 1;
     else if (players[0].hp === 0 && players[1].hp === 0) winner = "draw";
     else if (players[0].hp === 0) winner = 1;
     else if (players[1].hp === 0) winner = 0;
