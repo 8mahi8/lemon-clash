@@ -325,6 +325,7 @@
     const nonce = P.freshNonce(window.crypto);
     busy = true;
     $("confirm").disabled = true;
+    let committed = false;
     try {
       const hash = await P.makeCommit(roomCode, turn, uid, action, nonce, window.crypto.subtle);
       // Ignore a late digest from a match already left or replaced.
@@ -333,16 +334,26 @@
       saveSecret(turn, action, nonce, hash);
       const ref = originalRoomRef.child(turnPendingPath(turn));
       const ok = await transaction(ref, current => current === null ? { hash } : undefined);
+      if (epoch !== sessionEpoch || originalRoomRef !== roomRef) return;
       if (!ok) throw new Error("このターンはすでに行動確定済みです");
+      committed = true;
       selected = null;
       preview = null;
       setText("msg", "行動確定。相手を待っています…");
+      visible("pickArea", false);
+      visible("onlineWait", true);
+      setText("onlineWait", "行動を確定しました。相手の選択を待っています…");
     } catch (e) {
       if (epoch === sessionEpoch) {
         error("確定に失敗しました: " + (e.message || String(e)));
       }
     } finally {
-      if (epoch === sessionEpoch) busy = false;
+      if (epoch === sessionEpoch && originalRoomRef === roomRef) {
+        busy = false;
+        // A denied/failed write must not permanently disable "Confirm".
+        // Successful commits stay locked until a Firebase room update.
+        if (!committed && game && game.winner === null && seat) drawHand();
+      }
     }
   }
   async function synchronize(room, epoch) {
@@ -571,11 +582,13 @@
   }
   async function makeRoom() {
     if (busy) return;
+    const startedAt = sessionEpoch;
     busy = true;
     $("onlineHost").disabled = $("onlineJoin").disabled = true;
     setText("onlineError", "Firebaseへ接続しています…");
     try {
       await initializeFirebase();
+      if (startedAt !== sessionEpoch) return;
       for (let i = 0; i < 8; i++) {
         const code = P.generateRoomCode(window.crypto);
         const ref = database.ref(ROOM_ROOT + "/" + code);
@@ -586,6 +599,7 @@
           states: { 1: R.createGame() }
         };
         const ok = await transaction(ref, current => current === null ? initial : undefined);
+        if (startedAt !== sessionEpoch) return;
         if (!ok) continue;
         roomCode = code;
         seat = "host";
@@ -596,10 +610,12 @@
       }
       throw new Error("ルームを作れませんでした。しばらく待って再試行してください");
     } catch (e) {
-      error("部屋作成失敗: " + (e.message || String(e)));
+      if (startedAt === sessionEpoch) error("部屋作成失敗: " + (e.message || String(e)));
     } finally {
-      busy = false;
-      $("onlineHost").disabled = $("onlineJoin").disabled = false;
+      if (startedAt === sessionEpoch) {
+        busy = false;
+        $("onlineHost").disabled = $("onlineJoin").disabled = false;
+      }
     }
   }
   async function joinRoom() {
@@ -609,13 +625,16 @@
       error("部屋コードは6桁の数字で入力してください");
       return;
     }
+    const startedAt = sessionEpoch;
     busy = true;
     $("onlineHost").disabled = $("onlineJoin").disabled = true;
     setText("onlineError", "部屋に参加しています…");
     try {
       await initializeFirebase();
+      if (startedAt !== sessionEpoch) return;
       const ref = database.ref(ROOM_ROOT + "/" + code);
       const snapshot = await ref.once("value");
+      if (startedAt !== sessionEpoch) return;
       const current = snapshot.val();
       if (!current || current.protocol !== P.VERSION) throw new Error("この部屋は見つかりません");
       const returningHost = current.hostUid === uid;
@@ -626,6 +645,7 @@
       if (!returningHost && !current.guestUid) {
         const ok = await transaction(ref.child("guestUid"),
           data => data === null ? uid : undefined);
+        if (startedAt !== sessionEpoch) return;
         if (!ok) throw new Error("別の人が先に入室しました");
       }
       roomCode = code;
@@ -634,10 +654,12 @@
       showWaitingRoom();
       observe(ref);
     } catch (e) {
-      error("部屋参加失敗: " + (e.message || String(e)));
+      if (startedAt === sessionEpoch) error("部屋参加失敗: " + (e.message || String(e)));
     } finally {
-      busy = false;
-      $("onlineHost").disabled = $("onlineJoin").disabled = false;
+      if (startedAt === sessionEpoch) {
+        busy = false;
+        $("onlineHost").disabled = $("onlineJoin").disabled = false;
+      }
     }
   }
   $("onlineHost").addEventListener("click", makeRoom);
