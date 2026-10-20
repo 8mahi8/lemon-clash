@@ -77,6 +77,22 @@
     if (current.turn !== turn) throw new Error("ゲームのターン番号が一致しません");
     return current;
   }
+  // Firebase Realtime Database may return object keys in a different order
+  // from the insertion order used when resolveTurn builds a history entry.
+  // JSON.stringify(a) === JSON.stringify(b) wrongly rejects those equal states.
+  // Compare the exact structure and values instead; array order still matters.
+  function sameStructuredValue(a, b) {
+    if (a === b) return true;
+    if (!a || !b || typeof a !== "object" || typeof b !== "object") return false;
+    if (Array.isArray(a) !== Array.isArray(b)) return false;
+    const keysA = Object.keys(a).sort(), keysB = Object.keys(b).sort();
+    if (keysA.length !== keysB.length) return false;
+    for (let i = 0; i < keysA.length; i++) {
+      if (keysA[i] !== keysB[i] ||
+          !sameStructuredValue(a[keysA[i]], b[keysB[i]])) return false;
+    }
+    return true;
+  }
   async function verifyPublishedState(room, latest) {
     // A room creator must not inject a custom starting HP, energy or cards.
     if (latest.turn === 1) {
@@ -106,7 +122,7 @@
       }
     }, roomCode, window.crypto.subtle, R);
     if (!expected || expected.turn !== latest.turn || expected.winner !== latest.winner ||
-        JSON.stringify(expected.history) !== JSON.stringify(latest.history)) {
+        !sameStructuredValue(expected.history, latest.history)) {
       throw new Error("両端末のターン結果が一致していません");
     }
     for (let i = 0; i < 2; i++) {
