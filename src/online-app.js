@@ -17,6 +17,8 @@
   let listener = null, listeningError = null;
   let sessionEpoch = 0;
   let pendingWrites = Object.create(null);
+  // Result motion plays once per revealed turn, not on every Firebase snapshot.
+  let lastResultFxKey = "";
 
   function setText(id, value) { $(id).textContent = value; }
   function visible(id, yes) { $(id).classList.toggle("hidden", !yes); }
@@ -138,6 +140,9 @@
     setText("opHp", "♥ " + other.hp + "/" + R.START_HP);
     setText("myEn", "⚡ " + self.energy + "/7");
     setText("opEn", "⚡ " + other.energy + "/7");
+    // Static, low-cost visual indicator. Never changes game logic or HP.
+    $("myFighter").classList.toggle("critical", self.hp === 1 && game.winner === null);
+    $("opFighter").classList.toggle("critical", other.hp === 1 && game.winner === null);
     $("opMeter").classList.toggle("danger", other.energy === 7);
     visible("opWarning", other.energy === 7 && game.winner === null);
     for (const [id, n] of [["myMeter", self.energy], ["opMeter", other.energy]]) {
@@ -212,19 +217,52 @@
     elem.replaceChildren();
     const last = game.history[game.history.length - 1];
     const wrap = document.createElement("div");
-    wrap.className = "result";
+    const ownIndex = seat === "host" ? 0 : 1;
+    const status = game.winner === null ? "turn" :
+      game.winner === "draw" ? "draw" : game.winner === ownIndex ? "win" : "lose";
+    wrap.className = "result result-" + status;
+    const effectKey = roomCode + ":" + game.turn + ":" + game.winner;
+    if (lastResultFxKey !== effectKey) {
+      wrap.className += " result-enter";
+      lastResultFxKey = effectKey;
+    }
     const heading = document.createElement("h2");
     if (game.winner === "draw") heading.textContent = "引き分け！";
     else if (game.winner !== null) heading.textContent =
       game.winner === (seat === "host" ? 0 : 1) ? "勝利！" : "敗北…";
     else heading.textContent = "同時公開！";
-    const actions = document.createElement("p");
-    actions.textContent = last ? "P1：" + R.getMove(last.moves[0]).name +
-      " ／ P2：" + R.getMove(last.moves[1]).name : "対戦開始";
+    // Present both secret actions simultaneously. Each player's view marks
+    // their own action so a quick glance is enough during school play.
+    const actions = document.createElement("div");
+    actions.className = "turnReveal";
+    actions.setAttribute("aria-label", "両プレイヤーの公開した行動");
+    if (last) {
+      for (let i = 0; i < 2; i++) {
+        const move = R.getMove(last.moves[i]);
+        const piece = document.createElement("div");
+        piece.className = "revealPiece " + (i === ownIndex ? "reveal-me" : "reveal-op");
+        const who = document.createElement("small");
+        who.className = "revealOwner";
+        who.textContent = i === ownIndex ? "YOU · " + (i + 1) + "P" :
+          "RIVAL · " + (i + 1) + "P";
+        const symbol = document.createElement("span");
+        symbol.className = "big";
+        symbol.textContent = move.icon;
+        const name = document.createElement("b");
+        name.textContent = move.name;
+        const damage = document.createElement("small");
+        const taken = last.damages && Number.isFinite(last.damages[i]) ?
+          last.damages[i] : 0;
+        damage.textContent = "⚡" + move.cost + " · 被ダメージ " + (taken ? "-" + taken : "0");
+        piece.append(who, symbol, name, damage);
+        actions.append(piece);
+      }
+    } else {
+      actions.textContent = "対戦開始";
+    }
     const details = document.createElement("p");
+    details.className = "resultInfo";
     details.textContent = last ? last.messages.slice(2).join(" / ") : "";
-    // Keep the result visible above the rematch actions (Gemini's pasted
-    // school build constructed these elements but did not attach them).
     wrap.append(heading, actions, details);
 
     if (game.winner !== null) {
@@ -400,6 +438,7 @@
         clearSecret(game.turn);
         viewedTurn = 1;
         showRound = false;
+        lastResultFxKey = "";
         pendingWrites = Object.create(null);
       }
       game = incoming;
@@ -505,6 +544,7 @@
     roomRef = null; listener = null; roomCode = ""; seat = null; secret = null;
     roomData = null; game = null; selected = null; preview = null;
     viewedTurn = 0; showRound = false; busy = false; queued = null; hasQueued = false;
+    lastResultFxKey = "";
     pendingWrites = Object.create(null);
     visible("home", true);
     visible("onlineLobby", false);
