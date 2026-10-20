@@ -702,6 +702,12 @@ window.LEMON_FIREBASE_CONFIG = window.LEMON_FIREBASE_CONFIG || {
     displayStatus();
     drawLog();
     if (game.winner !== null || showRound) {
+      // A revealed turn must not retain the stale "waiting for commit" label.
+      const verdict = game.winner === "draw" ? "引き分け" :
+        game.winner === (seat === "host" ? 0 : 1) ? "勝利" : "敗北";
+      setText("msg", game.winner !== null ?
+        "MATCH END · " + verdict :
+        "TURN " + (game.turn - 1) + " · 行動公開");
       visible("pickArea", false);
       visible("onlineWait", false);
       visible("roundResult", true);
