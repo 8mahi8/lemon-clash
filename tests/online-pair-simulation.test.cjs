@@ -20,7 +20,7 @@ const deepCopy=value=>value===undefined?undefined:JSON.parse(JSON.stringify(valu
 class Element {
   constructor(tag="div"){
     this.tag=tag;this.children=[];this.attrs={};this.listeners={};
-    this.className="";this.textContent="";this.value="";this.disabled=false;this.scrollLeft=0;
+    this.className="";this.textContent="";this.value="";this.disabled=false;this.scrollLeft=0;this.style={};
     this.classes=new Set();
     this.classList={
       toggle:(name,force)=>{
@@ -78,6 +78,13 @@ class InMemoryRealtimeDatabase {
     }
     if(parts.length===2)return !room&&value?.hostUid===uid;
     if(!room)return false;
+    if(parts.length===4&&parts[2]==="rematch"){
+      const seat=parts[3];
+      const owner=seat==="host"?room.hostUid:room.guestUid;
+      const states=room.states||{};
+      const latest=states[Math.max(...Object.keys(states).map(Number))];
+      return owner===uid && value===true && !old && latest && latest.winner!==null;
+    }
     if(parts.length===3&&parts[2]==="guestUid"){
       return !room.guestUid&&value===uid&&room.hostUid!==uid;
     }
@@ -117,6 +124,22 @@ class FakeRef {
     }
     this.db.put(this.path,next);this.db.notify(this.path);
     return {committed:true};
+  }
+  async set(next){
+    const old=deepCopy(this.db.get(this.path));
+    if(!this.db.permit(this.uid,this.path,true,next,old))
+      throw new Error("PERMISSION_DENIED "+this.path);
+    this.db.put(this.path,next);this.db.notify(this.path);
+  }
+  async update(patch){
+    const room=this.db.get(this.path);
+    if(!room || room.hostUid!==this.uid || !room.rematch?.host || !room.rematch?.guest)
+      throw new Error("PERMISSION_DENIED rematch reset");
+    if(Object.keys(patch).sort().join(",")!=="rematch,rounds,states")
+      throw new Error("Unexpected room mutation");
+    for(const [key,value] of Object.entries(patch))
+      this.db.put(this.path+"/"+key,value);
+    this.db.notify(this.path);
   }
   async once(){
     if(!this.db.permit(this.uid,this.path,false)){
@@ -222,7 +245,7 @@ async function waitUntil(predicate,description){
   }
   throw new Error("Timed out: "+description);
 }
-test("independent simulated clients complete nine turns, reject strangers and rejoin",async()=>{
+test("independent simulated clients complete a 5-turn HP3 match, reject strangers and rejoin",async()=>{
   const db=new InMemoryRealtimeDatabase();
   const host=client(db,"sim-host"),guest=client(db,"sim-guest"),stranger=client(db,"sim-other");
   await host.click("onlineHost");
@@ -235,7 +258,7 @@ test("independent simulated clients complete nine turns, reject strangers and re
   await stranger.click("onlineJoin");
   assert.match(stranger.el("onlineError").textContent,/部屋参加失敗/);
   assert.equal(stranger.visible("battle"),false);
-  for(let turn=1;turn<=9;turn++){
+  for(let turn=1;turn<=5;turn++){
     if(turn>1){host.advance();guest.advance();}
     const hostAction=turn===1||turn%2===1?"通常攻撃":"チャージ";
     const guestAction=turn===2?"通常攻撃":"チャージ";
@@ -264,9 +287,9 @@ test("independent simulated clients complete nine turns, reject strangers and re
   }
   assert.match(host.el("roundResult").children[0].children[0].textContent,/勝利/);
   assert.match(guest.el("roundResult").children[0].children[0].textContent,/敗北/);
-  const final=db.get("lemonClashRoomsV1/"+code+"/states/10");
+  const final=db.get("lemonClashRoomsV1/"+code+"/states/6");
   assert.equal(final.winner,0);
-  assert.deepEqual(final.players.map(player=>player.hp),[4,0]);
+  assert.deepEqual(final.players.map(player=>player.hp),[2,0]);
   assert.deepEqual(db.failures,[]);
 });
 
@@ -337,7 +360,7 @@ test("online ultimate works after six charge rounds and ends the match",async()=
   await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"ultimate reveal");
   const final=db.get("lemonClashRoomsV1/"+code+"/states/8");
   assert.equal(final.winner,0);
-  assert.deepEqual(final.players.map(p=>p.hp),[5,5]);
+  assert.deepEqual(final.players.map(p=>p.hp),[3,3]);
   assert.equal(final.players[0].used.includes("judgment"),true);
   assert.match(host.el("roundResult").children[0].children[0].textContent,/勝利/);
   assert.match(guest.el("roundResult").children[0].children[0].textContent,/敗北/);
@@ -369,7 +392,7 @@ test("a player may leave after committing and rejoin before opponent reveals",as
     "both reveal after returning host");
   const after=db.get("lemonClashRoomsV1/"+code+"/rounds/1/host");
   assert.ok(after.reveal,"restored secret must be revealed after guest commit");
-  assert.equal(db.get("lemonClashRoomsV1/"+code+"/states/2").players[1].hp,4);
+  assert.equal(db.get("lemonClashRoomsV1/"+code+"/states/2").players[1].hp,2);
   assert.deepEqual(db.failures,[]);
 });
 
@@ -434,4 +457,55 @@ test("a delayed hash from a previous room cannot submit into the next room",asyn
   }finally{
     subtle.digest=original;
   }
+});
+
+
+test("both players vote to rematch; second HP3 match starts clean with results visible",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"rematch-host"),guest=client(db,"rematch-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>/^[0-9]{6}$/.test(host.el("lobbyCode").textContent),"rematch room");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"rematch join");
+  // In five turns: host attacks at 1,3,5, charges at 2,4.
+  for(let turn=1;turn<=5;turn++){
+    if(turn>1){host.advance();guest.advance()}
+    host.card(turn%2===1?"通常攻撃":"チャージ");
+    guest.card("チャージ");
+    await host.click("confirm");await guest.click("confirm");
+    await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"rematch match turn "+turn);
+  }
+  const first=db.get("lemonClashRoomsV1/"+code+"/states/6");
+  assert.deepEqual(first.players.map(p=>p.hp),[3,0]);
+  assert.equal(first.winner,0);
+  // Gemini's result UI missed this title; it must remain visible.
+  assert.match(host.el("roundResult").children[0].children[0].textContent,/勝利/);
+  assert.match(guest.el("roundResult").children[0].children[0].textContent,/敗北/);
+  assert.match(host.el("roundResult").children[0].children[3].textContent,/再戦/);
+  await host.el("roundResult").children[0].children[3].click();
+  await waitUntil(()=>!!db.get("lemonClashRoomsV1/"+code+"/rematch/host"),"host rematch vote");
+  assert.equal(db.get("lemonClashRoomsV1/"+code+"/states/6").winner,0,
+    "one rematch vote must not reset a finished match");
+  assert.match(host.el("roundResult").children[0].children[3].textContent,/相手の再戦待ち/);
+  await guest.el("roundResult").children[0].children[3].click();
+  await waitUntil(()=>host.visible("pickArea")&&guest.visible("pickArea")&&
+    !host.visible("roundResult")&&!guest.visible("roundResult"),"rematch reset");
+  const reset=db.get("lemonClashRoomsV1/"+code);
+  assert.equal(reset.states["1"].turn,1);
+  assert.deepEqual(reset.states["1"].players.map(p=>p.hp),[3,3]);
+  assert.equal(reset.states["6"],undefined);
+  assert.equal(reset.rounds,null);
+  assert.equal(reset.rematch,null);
+  assert.match(host.el("myHp").textContent,/3\/3/);
+  assert.match(guest.el("myHp").textContent,/3\/3/);
+  // The first result of the rematch must not be hidden by old viewedTurn=6.
+  host.card("チャージ");guest.card("通常攻撃");
+  await host.click("confirm");await guest.click("confirm");
+  await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
+    "round 1 result after rematch");
+  assert.match(host.el("roundResult").children[0].children[0].textContent,/同時公開/);
+  assert.equal(db.get("lemonClashRoomsV1/"+code+"/states/2").players[0].hp,2);
+  assert.deepEqual(db.failures,[]);
 });
