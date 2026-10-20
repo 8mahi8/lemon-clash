@@ -15,7 +15,22 @@ const path=require("node:path");
 const root=path.resolve(__dirname,"..");
 const sources=["src/rules.js","src/online-protocol.js","src/online-app.js"]
   .map(p=>fs.readFileSync(path.join(root,p),"utf8"));
-const deepCopy=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value));
+// Realtime Database snapshots enumerate object fields by key order, which can
+// differ from the original JavaScript insertion order. Simulate that on
+// EVERY fake wire read/write so our tests catch false history mismatches.
+function firebaseOrderedCopy(value) {
+  if (value === undefined) return undefined;
+  const parsed=JSON.parse(JSON.stringify(value));
+  function reorder(node) {
+    if (Array.isArray(node)) return node.map(reorder);
+    if (!node || typeof node!=="object") return node;
+    const sorted={};
+    for(const key of Object.keys(node).sort()) sorted[key]=reorder(node[key]);
+    return sorted;
+  }
+  return reorder(parsed);
+}
+const deepCopy=firebaseOrderedCopy;
 
 class Element {
   constructor(tag="div"){
@@ -394,6 +409,38 @@ test("room deletion clears both connected clients and returns to lobby",async()=
   assert.deepEqual(db.failures,[]);
 });
 
+
+test("Firebase key reordering cannot cause a false round mismatch, but data tampering is rejected",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"order-host"),guest=client(db,"order-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>host.visible("onlineLobby"),"key-order lobby");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"key-order joining");
+  host.card("通常攻撃");
+  guest.card("チャージ");
+  await host.click("confirm");await guest.click("confirm");
+  await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
+    "round must survive Firebase key sorting");
+  const saved=db.get("lemonClashRoomsV1/"+code+"/states/2");
+  assert.deepEqual(Object.keys(saved.history[0]),["damages","messages","moves","turn"],
+    "fake Firebase reorders stored history keys like its snapshot converter");
+  assert.equal(saved.winner,null);
+  assert.deepEqual(saved.players.map(p=>p.hp),[3,2]);
+
+  // Make a real change to a published result. A fresh client must NOT accept it.
+  await guest.click("quit");
+  const wrong=deepCopy(saved);
+  wrong.history[0].messages[0]="FAKE ACTION!";
+  db.put("lemonClashRoomsV1/"+code+"/states/2",wrong);
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>/両端末のターン結果が一致していません/.test(
+    guest.el("onlineError").textContent),"tampered result is still rejected");
+  assert.deepEqual(db.failures,[]);
+});
 
 test("rejects a tampered initial match before either player can play",async()=>{
   const db=new InMemoryRealtimeDatabase();
