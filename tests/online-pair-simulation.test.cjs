@@ -302,6 +302,69 @@ test("independent simulated clients complete a 5-turn HP3 match, reject stranger
 });
 
 
+test("Phase 3 result cards show both actions and damage from each player's perspective",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"view-host"),guest=client(db,"view-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>/^[0-9]{6}$/.test(host.el("lobbyCode").textContent),"UI room code");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"UI pair");
+  host.card("通常攻撃");
+  guest.card("チャージ");
+  await host.click("confirm");
+  await guest.click("confirm");
+  await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"UI reveal");
+  const h=host.el("roundResult").children[0];
+  const g=guest.el("roundResult").children[0];
+  assert.match(h.className,/result-turn/);
+  assert.match(h.className,/result-enter/);
+  assert.equal(h.children[1].children.length,2);
+  assert.equal(g.children[1].children.length,2);
+  const hOwn=h.children[1].children[0].children;
+  const hRival=h.children[1].children[1].children;
+  assert.match(hOwn[0].textContent,/YOU/);
+  assert.equal(hOwn[2].textContent,"通常攻撃");
+  assert.equal(hOwn[3].textContent,"⚡1 · 被ダメージ 0");
+  assert.match(hRival[0].textContent,/RIVAL/);
+  assert.equal(hRival[2].textContent,"チャージ");
+  assert.equal(hRival[3].textContent,"⚡0 · 被ダメージ -1");
+  assert.match(g.children[1].children[0].children[0].textContent,/RIVAL/);
+  assert.match(g.children[1].children[1].children[0].textContent,/YOU/);
+  assert.equal(g.children[3].textContent,"次のターンへ");
+  assert.equal(host.el("myFighter").classList.contains("critical"),false);
+  assert.deepEqual(db.failures,[]);
+});
+
+test("Phase 3 one-HP warning appears on both perspectives and clears after defeat",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"critical-host"),guest=client(db,"critical-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>host.visible("onlineLobby"),"warning room");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"warning join");
+  for(let turn=1;turn<=5;turn++){
+    if(turn>1){host.advance();guest.advance();}
+    host.card(turn%2===1?"通常攻撃":"チャージ");
+    guest.card("チャージ");
+    await host.click("confirm");await guest.click("confirm");
+    await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"warning turn "+turn);
+    if(turn===3){
+      assert.match(guest.el("myHp").textContent,/1\/3/);
+      assert.equal(guest.el("myFighter").classList.contains("critical"),true);
+      assert.equal(host.el("opFighter").classList.contains("critical"),true);
+    }
+  }
+  assert.equal(guest.el("myFighter").classList.contains("critical"),false);
+  assert.equal(host.el("opFighter").classList.contains("critical"),false);
+  assert.match(host.el("roundResult").children[0].className,/result-win/);
+  assert.match(guest.el("roundResult").children[0].className,/result-lose/);
+  assert.deepEqual(db.failures,[]);
+});
+
 test("room deletion clears both connected clients and returns to lobby",async()=>{
   const db=new InMemoryRealtimeDatabase();
   const host=client(db,"deleted-host"),guest=client(db,"deleted-guest");
