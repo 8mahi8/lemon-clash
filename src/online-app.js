@@ -134,8 +134,8 @@
     const self = game.players[selfIndex], other = game.players[1 - selfIndex];
     setText("myName", "YOU · " + (selfIndex + 1) + "P");
     setText("opName", "RIVAL · " + (2 - selfIndex) + "P");
-    setText("myHp", "♥ " + self.hp + "/5");
-    setText("opHp", "♥ " + other.hp + "/5");
+    setText("myHp", "♥ " + self.hp + "/" + R.START_HP);
+    setText("opHp", "♥ " + other.hp + "/" + R.START_HP);
     setText("myEn", "⚡ " + self.energy + "/7");
     setText("opEn", "⚡ " + other.energy + "/7");
     $("opMeter").classList.toggle("danger", other.energy === 7);
@@ -223,17 +223,55 @@
       " ／ P2：" + R.getMove(last.moves[1]).name : "対戦開始";
     const details = document.createElement("p");
     details.textContent = last ? last.messages.slice(2).join(" / ") : "";
-    const advance = document.createElement("button");
-    advance.className = "btn";
-    advance.textContent = game.winner !== null ? "タイトルに戻る" : "次のターンへ";
-    advance.addEventListener("click", () => {
-      if (game.winner !== null) return leave();
-      viewedTurn = game.turn;
-      showRound = false;
-      resetSelection();
-      redraw();
-    });
-    wrap.append(heading, actions, details, advance);
+    // Keep the result visible above the rematch actions (Gemini's pasted
+    // school build constructed these elements but did not attach them).
+    wrap.append(heading, actions, details);
+
+    if (game.winner !== null) {
+      const myRematch = roomData && roomData.rematch && roomData.rematch[seat];
+      const otherSeat = seat === "host" ? "guest" : "host";
+      const otherRematch = roomData && roomData.rematch && roomData.rematch[otherSeat];
+
+      const rematchBtn = document.createElement("button");
+      rematchBtn.className = "btn";
+      rematchBtn.style.marginBottom = "10px";
+      rematchBtn.textContent = myRematch ?
+        (otherRematch ? "再戦準備中..." : "相手の再戦待ち...") :
+        "もう一度対戦する（再戦）";
+      rematchBtn.disabled = !!myRematch;
+      rematchBtn.addEventListener("click", async () => {
+        if (!roomRef || !seat) return;
+        const originalRef = roomRef, epoch = sessionEpoch;
+        rematchBtn.disabled = true;
+        rematchBtn.textContent = "相手の再戦待ち...";
+        try {
+          await originalRef.child("rematch/" + seat).set(true);
+        } catch (e) {
+          if (epoch === sessionEpoch && originalRef === roomRef) {
+            error("再戦リクエストに失敗しました: " + (e.message || String(e)));
+            rematchBtn.disabled = false;
+          }
+        }
+      });
+      wrap.append(rematchBtn);
+
+      const titleBtn = document.createElement("button");
+      titleBtn.className = "btn secondary small";
+      titleBtn.textContent = "タイトルに戻る";
+      titleBtn.addEventListener("click", leave);
+      wrap.append(titleBtn);
+    } else {
+      const advance = document.createElement("button");
+      advance.className = "btn";
+      advance.textContent = "次のターンへ";
+      advance.addEventListener("click", () => {
+        viewedTurn = game.turn;
+        showRound = false;
+        resetSelection();
+        redraw();
+      });
+      wrap.append(advance);
+    }
     elem.append(wrap);
   }
   function redraw() {
@@ -319,12 +357,40 @@
       throw new Error("このルームの参加権限がありません");
     }
     roomData = room;
+    // Gemini school release: both players can opt into another game with
+    // their existing 6-digit room. Only the host applies the reset.
+    if (room.rematch && room.rematch.host && room.rematch.guest) {
+      if (seat === "host") {
+        const resetKey = "rematch-reset-exec";
+        if (!pendingWrites[resetKey]) {
+          pendingWrites[resetKey] = true;
+          try {
+            await roomRef.update({
+              states: { 1: R.createGame() },
+              rounds: null,
+              rematch: null
+            });
+          } finally {
+            pendingWrites[resetKey] = false;
+          }
+        }
+      }
+      return;
+    }
     if (!room.guestUid) { showWaitingRoom(); return; }
     const incoming = latestGame(room);
     if (!game || incoming.turn !== game.turn) {
       await verifyPublishedState(room, incoming);
       if (epoch !== sessionEpoch || !roomRef) return;
       if (game && incoming.turn > game.turn) clearSecret(game.turn);
+      if (game && incoming.turn < game.turn) {
+        // Replayed turn numbers belong to a NEW match. Without resetting
+        // viewedTurn, the first few results of a rematch can be hidden.
+        clearSecret(game.turn);
+        viewedTurn = 1;
+        showRound = false;
+        pendingWrites = Object.create(null);
+      }
       game = incoming;
       selected = null;
       preview = null;
