@@ -445,6 +445,77 @@ test("online judgment takes priority over a same-turn attack after six charge ro
 });
 
 
+test("HP1 vs HP1 simultaneous basic attack ends in a draw on both clients; rematch survives",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"draw-host"),guest=client(db,"draw-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>host.visible("onlineLobby"),"draw lobby");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"draw joined");
+  for(let turn=1;turn<=5;turn++){
+    if(turn>1){host.advance();guest.advance();}
+    const move=turn%2===1?"通常攻撃":"チャージ";
+    host.card(move);guest.card(move);
+    await host.click("confirm");await guest.click("confirm");
+    await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
+      "draw turn "+turn);
+    if(turn===3){
+      assert.match(host.el("myHp").textContent,/1\/3/);
+      assert.match(guest.el("myHp").textContent,/1\/3/);
+    }
+  }
+  const final=db.get("lemonClashRoomsV1/"+code+"/states/6");
+  assert.equal(final.winner,"draw");
+  assert.deepEqual(final.players.map(p=>p.hp),[0,0]);
+  assert.match(host.el("roundResult").children[0].children[0].textContent,/引き分け/);
+  assert.match(guest.el("roundResult").children[0].children[0].textContent,/引き分け/);
+  assert.match(host.el("roundResult").children[0].className,/result-draw/);
+  assert.match(guest.el("roundResult").children[0].className,/result-draw/);
+  await host.el("roundResult").children[0].children[3].click();
+  await guest.el("roundResult").children[0].children[3].click();
+  await waitUntil(()=>host.visible("pickArea")&&guest.visible("pickArea"),"draw rematch");
+  assert.deepEqual(db.get("lemonClashRoomsV1/"+code+"/states/1").players.map(p=>p.hp),
+    [3,3]);
+  assert.deepEqual(db.failures,[]);
+});
+
+test("HP1 player wins with judgment while rival's simultaneous attack would be lethal",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"lethal-judgment-host"),guest=client(db,"lethal-judgment-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>host.visible("onlineLobby"),"lethal judgment lobby");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"lethal judgment joined");
+  for(let turn=1;turn<=6;turn++){
+    if(turn>1){host.advance();guest.advance();}
+    host.card("チャージ");
+    guest.card(turn===1||turn===3?"通常攻撃":"チャージ");
+    await host.click("confirm");await guest.click("confirm");
+    await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
+      "lethal judgment setup "+turn);
+  }
+  assert.match(host.el("myHp").textContent,/1\/3/);
+  assert.match(host.el("myEn").textContent,/7\/7/);
+  host.advance();guest.advance();
+  host.card("終局宣告");guest.card("通常攻撃");
+  await host.click("confirm");await guest.click("confirm");
+  await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
+    "lethal judgment result");
+  const final=db.get("lemonClashRoomsV1/"+code+"/states/8");
+  assert.equal(final.winner,0);
+  assert.deepEqual(final.players.map(p=>p.hp),[1,3],
+    "judgment must protect the declarer's remaining HP");
+  assert.match(host.el("roundResult").children[0].children[0].textContent,/勝利/);
+  assert.match(guest.el("roundResult").children[0].children[0].textContent,/敗北/);
+  assert.match(host.el("roundResult").children[0].className,/result-win/);
+  assert.match(guest.el("roundResult").children[0].className,/result-lose/);
+  assert.deepEqual(db.failures,[]);
+});
+
 test("a player may leave after committing and rejoin before opponent reveals",async()=>{
   const db=new InMemoryRealtimeDatabase();
   const host=client(db,"reveal-host"),guest=client(db,"reveal-guest");
