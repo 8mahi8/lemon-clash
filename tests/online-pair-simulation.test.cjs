@@ -320,6 +320,8 @@ test("Phase 3 result cards show both actions and damage from each player's persp
   const g=guest.el("roundResult").children[0];
   assert.match(h.className,/result-turn/);
   assert.match(h.className,/result-enter/);
+  assert.match(host.el("msg").textContent,/TURN 1 · 行動公開/);
+  assert.match(guest.el("msg").textContent,/TURN 1 · 行動公開/);
   assert.equal(h.children[1].children.length,2);
   assert.equal(g.children[1].children.length,2);
   const hOwn=h.children[1].children[0].children;
@@ -367,6 +369,8 @@ test("Phase 3 one-HP warning appears on both perspectives and clears after defea
   assert.equal(host.el("opFighter").classList.contains("critical"),false);
   assert.match(host.el("roundResult").children[0].className,/result-win/);
   assert.match(guest.el("roundResult").children[0].className,/result-lose/);
+  assert.match(host.el("msg").textContent,/MATCH END · 勝利/);
+  assert.match(guest.el("msg").textContent,/MATCH END · 敗北/);
   assert.deepEqual(db.failures,[]);
 });
 
@@ -473,6 +477,8 @@ test("HP1 vs HP1 simultaneous basic attack ends in a draw on both clients; remat
   assert.match(guest.el("roundResult").children[0].children[0].textContent,/引き分け/);
   assert.match(host.el("roundResult").children[0].className,/result-draw/);
   assert.match(guest.el("roundResult").children[0].className,/result-draw/);
+  assert.match(host.el("msg").textContent,/MATCH END · 引き分け/);
+  assert.match(guest.el("msg").textContent,/MATCH END · 引き分け/);
   await host.el("roundResult").children[0].children[3].click();
   await guest.el("roundResult").children[0].children[3].click();
   await waitUntil(()=>host.visible("pickArea")&&guest.visible("pickArea"),"draw rematch");
@@ -513,6 +519,8 @@ test("HP1 player wins with judgment while rival's simultaneous attack would be l
   assert.match(guest.el("roundResult").children[0].children[0].textContent,/敗北/);
   assert.match(host.el("roundResult").children[0].className,/result-win/);
   assert.match(guest.el("roundResult").children[0].className,/result-lose/);
+  assert.match(host.el("msg").textContent,/MATCH END · 勝利/);
+  assert.match(guest.el("msg").textContent,/MATCH END · 敗北/);
   assert.deepEqual(db.failures,[]);
 });
 
