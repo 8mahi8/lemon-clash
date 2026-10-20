@@ -342,7 +342,7 @@ test("rejects a tampered initial match before either player can play",async()=>{
 });
 
 
-test("online ultimate works after six charge rounds and ends the match",async()=>{
+test("online judgment takes priority over a same-turn attack after six charge rounds",async()=>{
   const db=new InMemoryRealtimeDatabase();
   const host=client(db,"ultimate-host"),guest=client(db,"ultimate-guest");
   await host.click("onlineHost");
@@ -363,12 +363,13 @@ test("online ultimate works after six charge rounds and ends the match",async()=
   await host.click("confirm");
   const hostEntry=db.get("lemonClashRoomsV1/"+code+"/rounds/7/host");
   assert.equal(hostEntry.reveal,undefined,"ultimate choice must remain secret before both commits");
-  guest.card("通常防御");
+  guest.card("通常攻撃");
   await guest.click("confirm");
   await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"ultimate reveal");
   const final=db.get("lemonClashRoomsV1/"+code+"/states/8");
   assert.equal(final.winner,0);
-  assert.deepEqual(final.players.map(p=>p.hp),[3,3]);
+  assert.deepEqual(final.players.map(p=>p.hp),[3,3], "judgment bearer takes no damage");
+  assert.match(final.history[final.history.length-1].messages.join(" "),/終局宣告が成立/);
   assert.equal(final.players[0].used.includes("judgment"),true);
   assert.match(host.el("roundResult").children[0].children[0].textContent,/勝利/);
   assert.match(guest.el("roundResult").children[0].children[0].textContent,/敗北/);
