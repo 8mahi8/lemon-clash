@@ -583,6 +583,7 @@
   async function makeRoom() {
     if (busy) return;
     const startedAt = sessionEpoch;
+    let adoptedEpoch = startedAt;
     busy = true;
     $("onlineHost").disabled = $("onlineJoin").disabled = true;
     setText("onlineError", "Firebaseへ接続しています…");
@@ -606,13 +607,14 @@
         viewedTurn = 1;
         showWaitingRoom();
         observe(ref);
+        adoptedEpoch = sessionEpoch;
         return;
       }
       throw new Error("ルームを作れませんでした。しばらく待って再試行してください");
     } catch (e) {
       if (startedAt === sessionEpoch) error("部屋作成失敗: " + (e.message || String(e)));
     } finally {
-      if (startedAt === sessionEpoch) {
+      if (adoptedEpoch === sessionEpoch) {
         busy = false;
         $("onlineHost").disabled = $("onlineJoin").disabled = false;
       }
@@ -626,6 +628,7 @@
       return;
     }
     const startedAt = sessionEpoch;
+    let adoptedEpoch = startedAt;
     busy = true;
     $("onlineHost").disabled = $("onlineJoin").disabled = true;
     setText("onlineError", "部屋に参加しています…");
@@ -653,10 +656,11 @@
       viewedTurn = 1;
       showWaitingRoom();
       observe(ref);
+      adoptedEpoch = sessionEpoch;
     } catch (e) {
       if (startedAt === sessionEpoch) error("部屋参加失敗: " + (e.message || String(e)));
     } finally {
-      if (startedAt === sessionEpoch) {
+      if (adoptedEpoch === sessionEpoch) {
         busy = false;
         $("onlineHost").disabled = $("onlineJoin").disabled = false;
       }
