@@ -334,6 +334,11 @@ test("Phase 3 result cards show both actions and damage from each player's persp
   assert.match(g.children[1].children[1].children[0].textContent,/YOU/);
   assert.equal(g.children[3].textContent,"次のターンへ");
   assert.equal(host.el("myFighter").classList.contains("critical"),false);
+  // Repeated Firebase snapshots must not replay the entrance animation.
+  db.notify("lemonClashRoomsV1/"+code);
+  await waitUntil(()=>
+    !host.el("roundResult").children[0].className.includes("result-enter"),
+    "result animation is not replayed");
   assert.deepEqual(db.failures,[]);
 });
 
@@ -578,6 +583,8 @@ test("both players vote to rematch; second HP3 match starts clean with results v
   await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
     "round 1 result after rematch");
   assert.match(host.el("roundResult").children[0].children[0].textContent,/同時公開/);
+  assert.match(host.el("roundResult").children[0].className,/result-enter/,
+    "first result after a rematch should animate once again");
   assert.equal(db.get("lemonClashRoomsV1/"+code+"/states/2").players[0].hp,2);
   assert.deepEqual(db.failures,[]);
 });
