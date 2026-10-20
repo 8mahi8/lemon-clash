@@ -53,7 +53,7 @@ class Document {
   querySelector(){return null;}
 }
 class InMemoryRealtimeDatabase {
-  constructor(){this.data={};this.listeners=[];this.failures=[];}
+  constructor(){this.data={};this.listeners=[];this.failures=[];this.rejectNextTransaction=null;this.deferReadPath=null;this.resumeDeferredRead=null;}
   get(path){
     let value=this.data;
     for(const part of path.split("/").filter(Boolean)){
@@ -117,6 +117,10 @@ class FakeRef {
   constructor(db,uid,path){this.db=db;this.uid=uid;this.path=path;}
   child(path){return new FakeRef(this.db,this.uid,this.path+"/"+path);}
   async transaction(updater){
+    if(this.db.rejectNextTransaction===this.path){
+      this.db.rejectNextTransaction=null;
+      throw new Error("Simulated one-time transaction failure");
+    }
     const old=deepCopy(this.db.get(this.path)),next=updater(old);
     if(next===undefined)return {committed:false};
     if(!this.db.permit(this.uid,this.path,true,next,old)){
@@ -142,6 +146,10 @@ class FakeRef {
     this.db.notify(this.path);
   }
   async once(){
+    if(this.db.deferReadPath===this.path){
+      this.db.deferReadPath=null;
+      await new Promise(resolve=>{this.db.resumeDeferredRead=resolve});
+    }
     if(!this.db.permit(this.uid,this.path,false)){
       throw new Error("PERMISSION_DENIED read "+this.path);
     }
@@ -507,5 +515,90 @@ test("both players vote to rematch; second HP3 match starts clean with results v
     "round 1 result after rematch");
   assert.match(host.el("roundResult").children[0].children[0].textContent,/同時公開/);
   assert.equal(db.get("lemonClashRoomsV1/"+code+"/states/2").players[0].hp,2);
+  assert.deepEqual(db.failures,[]);
+});
+
+test("failed first move commit restores the Confirm button for a safe retry",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"retry-host"),guest=client(db,"retry-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>/^[0-9]{6}$/.test(host.el("lobbyCode").textContent),"retry room");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"retry join");
+  host.card("通常攻撃");
+  db.rejectNextTransaction="lemonClashRoomsV1/"+code+"/rounds/1/host";
+  await host.click("confirm");
+  assert.match(host.el("onlineError").textContent,/確定に失敗/);
+  assert.equal(host.el("confirm").disabled,false,"failed commit must be retryable");
+  assert.equal(db.get("lemonClashRoomsV1/"+code+"/rounds/1/host"),null);
+  await host.click("confirm");
+  const committed=db.get("lemonClashRoomsV1/"+code+"/rounds/1/host");
+  assert.match(committed.hash,/^[0-9a-f]{64}$/);
+  assert.equal(committed.reveal,undefined);
+  guest.card("チャージ");
+  await guest.click("confirm");
+  await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"retry resolved");
+  assert.equal(db.get("lemonClashRoomsV1/"+code+"/states/2").players[1].hp,2);
+  assert.deepEqual(db.failures,[]);
+});
+
+test("late room lookup cannot resurrect an abandoned join",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const a=client(db,"join-stale-host"),b=client(db,"join-stale-guest");
+  await a.click("onlineHost");
+  await waitUntil(()=>a.visible("onlineLobby"),"stale lookup room");
+  const firstCode=a.el("lobbyCode").textContent;
+  db.deferReadPath="lemonClashRoomsV1/"+firstCode;
+  b.el("roomInput").value=firstCode;
+  const firstJoin=b.click("onlineJoin");
+  await waitUntil(()=>typeof db.resumeDeferredRead==="function","stalled first lookup");
+  // The previous UI has been exited. We allow a different room to start.
+  b.el("onlineLobbyExit").click();
+  await b.click("onlineHost");
+  await waitUntil(()=>b.visible("onlineLobby"),"fresh room after exit");
+  const nextCode=b.el("lobbyCode").textContent;
+  assert.notEqual(nextCode,firstCode);
+  db.resumeDeferredRead();
+  await firstJoin;
+  assert.equal(b.el("lobbyCode").textContent,nextCode);
+  assert.equal(b.visible("battle"),false);
+  assert.equal(b.visible("onlineLobby"),true);
+  assert.equal(db.get("lemonClashRoomsV1/"+firstCode+"/guestUid"),null);
+  assert.deepEqual(db.failures,[]);
+});
+
+test("three consecutive HP3 games can play and rematch in the same room",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"loop-host"),guest=client(db,"loop-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>host.visible("onlineLobby"),"loop room");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"loop join");
+  for(let match=1;match<=3;match++){
+    assert.match(host.el("myHp").textContent,/3\/3/,"new match HP3");
+    assert.match(guest.el("opHp").textContent,/3\/3/,"new match rival HP3");
+    for(let turn=1;turn<=5;turn++){
+      if(turn>1){host.advance();guest.advance();}
+      host.card(turn%2===1?"通常攻撃":"チャージ");
+      guest.card("チャージ");
+      await host.click("confirm");
+      await guest.click("confirm");
+      await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
+        "loop match "+match+" turn "+turn);
+    }
+    const final=db.get("lemonClashRoomsV1/"+code+"/states/6");
+    assert.deepEqual(final.players.map(p=>p.hp),[3,0]);
+    assert.equal(final.winner,0);
+    if(match===3)break;
+    await host.el("roundResult").children[0].children[3].click();
+    await guest.el("roundResult").children[0].children[3].click();
+    await waitUntil(()=>host.visible("pickArea")&&guest.visible("pickArea"),
+      "rematch loop "+match);
+    assert.equal(db.get("lemonClashRoomsV1/"+code+"/states/6"),null);
+  }
   assert.deepEqual(db.failures,[]);
 });
