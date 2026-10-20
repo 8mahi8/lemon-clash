@@ -146,8 +146,8 @@ async function client(browser) {
     const b=await guest.page.locator("#roundResult").innerText();
     assert.match(a,/通常攻撃/);
     assert.match(b,/チャージ/);
-    assert.match(await host.page.locator("#opHp").innerText(),/4\/5/);
-    assert.match(await guest.page.locator("#myHp").innerText(),/4\/5/);
+    assert.match(await host.page.locator("#opHp").innerText(),/2\/3/);
+    assert.match(await guest.page.locator("#myHp").innerText(),/2\/3/);
     await host.page.locator("#roundResult button").click();
     await guest.page.locator("#roundResult button").click();
     assert.equal(await host.page.locator("#confirm").isDisabled(),true);
@@ -160,8 +160,8 @@ async function client(browser) {
       host.page.locator("#roundResult").waitFor({state:"visible",timeout:30000}),
       guest.page.locator("#roundResult").waitFor({state:"visible",timeout:30000})
     ]);
-    assert.equal((await host.page.locator("#myHp").innerText()).includes("4/5"),true);
-    assert.equal((await guest.page.locator("#opHp").innerText()).includes("4/5"),true);
+    assert.equal((await host.page.locator("#myHp").innerText()).includes("2/3"),true);
+    assert.equal((await guest.page.locator("#opHp").innerText()).includes("2/3"),true);
     // A returning host must resume seat 1P rather than being rejected or taking 2P.
     await host.page.locator("#quit").click();
     await host.page.locator("#roomInput").fill(code);
@@ -170,8 +170,8 @@ async function client(browser) {
     assert.match(await host.page.locator("#myName").innerText(),/1P/);
     assert.match(await guest.page.locator("#myName").innerText(),/2P/);
     // Finish a WHOLE match rather than stopping at a two-turn smoke test.
-    // Host alternates charge/attack; guest charges and eventually loses all 5 HP.
-    for(let turn=3;turn<=9;turn++){
+    // Host alternates charge/attack; guest charges and eventually loses all 3 HP.
+    for(let turn=3;turn<=5;turn++){
       await host.page.locator("#roundResult button").click();
       await guest.page.locator("#roundResult button").click();
       const hostMove=turn%2===0 ? "チャージ" : "通常攻撃";
@@ -186,16 +186,16 @@ async function client(browser) {
     }
     assert.match(await host.page.locator("#roundResult h2").innerText(),/勝利/);
     assert.match(await guest.page.locator("#roundResult h2").innerText(),/敗北/);
-    assert.equal((await guest.page.locator("#myHp").innerText()).includes("0/5"),true);
+    assert.equal((await guest.page.locator("#myHp").innerText()).includes("0/3"),true);
     assert.equal((await host.page.locator("#myEn").innerText()).includes("0/7"),true);
-    // Host attacked on odd turns 1,3,5,7,9 and recharged on even turns 2,4,6,8.
+    // Host attacked on turns 1,3,5 and recharged on turns 2,4.
     // Existing guest can leave and rejoin the SAME room without taking another seat.
     await guest.page.locator("#quit").click();
     await guest.page.locator("#roomInput").fill(code);
     await guest.page.locator("#onlineJoin").click();
     await guest.page.locator("#battle").waitFor({state:"visible",timeout:30000});
     await guest.page.locator("#roundResult").waitFor({state:"visible",timeout:30000});
-    assert.equal((await guest.page.locator("#opHp").innerText()).includes("4/5"),true);
+    assert.equal((await guest.page.locator("#opHp").innerText()).includes("2/3"),true);
     assert.deepEqual(host.errors,[]);
     assert.deepEqual(guest.errors,[]);
     console.log("PASS two WebKit clients + anonymous Auth + RTDB commit/reveal + state agreement + authz");
