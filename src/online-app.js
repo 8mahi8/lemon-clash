@@ -509,6 +509,7 @@
     visible("home", true);
     visible("onlineLobby", false);
     visible("battle", false);
+    $("onlineHost").disabled = $("onlineJoin").disabled = false;
     resetSelection();
     setText("onlineError", "別の対戦をするには、新しい部屋を作成または参加してね。");
   }
