@@ -1,4 +1,41 @@
-# LEMON CLASH — 1vs1 online development (isolated environment)
+# LEMON CLASH — 1vs1 online development (Google Sites school edition)
+
+## Current school-live source precedence (2026-10-20)
+
+The user confirmed that friends successfully played over the network and used
+Gemini's two-player rematch from the published Google Sites code. They pasted
+that Gemini-modified full HTML into the conversation and then changed starting
+health from 5 to **3** directly within Google Sites.
+
+The **published Google Sites HTML is the source of truth**, not the GitHub
+repository or earlier Drive text. School changes are made by replacing the
+entire HTML in Google Sites without GitHub. Therefore never overwrite a
+working published page from the GitHub copy without comparing the school
+edits. The current dev branch ports Gemini's rematch and HP3, adds the
+missing result title/action text, resets viewedTurn when the match restarts,
+and verifies a second match's turn result through a deterministic simulator.
+
+The shared Realtime Database endpoint is configured in
+`src/firebase-config.js` and `lemonClashRoomsV1` remains a separate
+namespace from BRAWL and Shokoku. The user reports the school live version
+has successfully used it. There is NO Firebase Auth in shared mode;
+local player IDs are not credentials and do not prevent malicious
+interference. Do not alter production Firebase Rules/data, source for other
+games, or the Google Sites page without separate authorization. These
+games are private friends-only playtests, not a hardened public release.
+
+**Evidence distinction:** school network and rematch confirmation is a
+firsthand user report for the live HTML. The dev port's tests are fake
+DOM/in-memory RTDB simulations and code checks. They do not substitute
+for playing the exact new dev build on school Safari.
+
+## Historical setup note (now superseded)
+
+The remainder of this document describes the earlier isolated Auth-based
+development plan. That plan is NOT the current school's shared-RTDB release
+configuration. Do not treat its prohibitions on shared RTDB or statements
+that school play is unverified as the latest status.
+
 
 This is a non-production test implementation. Do not change BRAWL/Shokoku/Firebase production projects or published Google Sites.
 
