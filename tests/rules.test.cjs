@@ -24,6 +24,49 @@ test("attack costs one and cannot be spammed at zero", () => {
   assert.equal(g.players[1].hp, 2);
   assert.equal(R.validMove(g.players[0], "attack"), false);
 });
+test("basic attack interrupts charge and deals one damage from either seat", () => {
+  for (const [attackIndex, moves] of [[0, ["attack", "charge"]], [1, ["charge", "attack"]]]) {
+    const starting = game();
+    const after = R.resolveTurn(starting, ...moves);
+    const charger = 1 - attackIndex;
+    assert.equal(after.players[charger].hp, 2);
+    assert.equal(after.players[charger].energy, 1, "charge gain must be cancelled");
+    assert.equal(after.players[attackIndex].energy, 0, "attack still costs one");
+    assert.deepEqual(starting.players.map(p => [p.hp, p.energy]), [[3, 1], [3, 1]],
+      "turn resolution must not mutate its input");
+    assert.match(after.history[0].messages.join(" "), /チャージが通常攻撃で中断/);
+  }
+});
+
+test("charge still generates one energy against non-attack moves", () => {
+  for (const move of ["charge", "guard", "feint", "read", "counter", "seal"]) {
+    const g = withEnergy(4);
+    const out = R.resolveTurn(g, move, "charge");
+    assert.equal(out.players[1].energy, 5, "charge should succeed against " + move);
+  }
+});
+
+test("special attacks do not interrupt charge despite causing damage", () => {
+  for (const move of ["pierce", "volley", "crush", "final", "allin"]) {
+    const g = R.createGame();
+    g.players[0].energy = 4;
+    const out = R.resolveTurn(g, move, "charge");
+    assert.ok(out.history[0].damages[1] > 0, move + " should damage");
+    assert.equal(out.players[1].energy, 2, move + " must not cancel +1 charge");
+    assert.equal(out.history[0].messages.some(m => m.includes("通常攻撃で中断")), false);
+  }
+});
+
+test("charge interruption coexists with energy-drain and ordinary guard rules", () => {
+  const stolen = R.resolveTurn(withEnergy(4), "drain", "charge");
+  assert.deepEqual(stolen.players.map(p => p.energy), [5, 4]);
+  const stopped = R.resolveTurn(withEnergy(4), "attack", "guard");
+  assert.deepEqual(stopped.players.map(p => p.hp), [3, 3]);
+  assert.equal(stopped.players[0].energy, 3);
+  const normal = R.resolveTurn(withEnergy(4), "attack", "read");
+  assert.equal(normal.players[1].hp, 2, "read must still fail against a basic attack");
+});
+
 test("guard is free and does not grant energy", () => {
   const g = R.resolveTurn(game(), "attack", "guard");
   assert.equal(g.players[1].hp, 3);
