@@ -17,6 +17,14 @@
     { id: "judgment", name: "終局宣告", cost: 10, icon: "👑", type: "ultimate", description: "使用が成立した時点で勝利。防御・見切り・封印・カウンター無効" }
   ]);
   const LOOKUP = Object.fromEntries(CARDS.map(function (card) { return [card.id, card]; }));
+  // Sudden death is a separate zero-resource 3-way mind game.
+  // Attack beats Break, Break beats Guard, Guard beats Attack.
+  const SUDDEN = Object.freeze({
+    sd_attack: { id: "sd_attack", name: "攻撃", cost: 0, icon: "⚔️", description: "崩しに勝つ。防御に負ける" },
+    sd_guard: { id: "sd_guard", name: "防御", cost: 0, icon: "🛡️", description: "攻撃に勝つ。崩しに負ける" },
+    sd_break: { id: "sd_break", name: "崩し", cost: 0, icon: "💥", description: "防御に勝つ。攻撃に負ける" }
+  });
+  const SD_WIN = Object.freeze({ sd_attack: "sd_break", sd_guard: "sd_attack", sd_break: "sd_guard" });
   const BASIC = Object.freeze({
     charge: { id: "charge", name: "チャージ", cost: 0, icon: "⚡", description: "エネルギー+1。通常攻撃を受けると獲得失敗" },
     attack: { id: "attack", name: "通常攻撃", cost: 1, icon: "⚔️", description: "1ダメージ。相手のチャージを中断。通常防御で防げる" },
@@ -27,16 +35,18 @@
     return { hp: START_HP, energy: 1, used: [] };
   }
   function createGame() {
-    return { turn: 1, players: [createPlayer(), createPlayer()], winner: null, history: [] };
+    return { turn: 1, players: [createPlayer(), createPlayer()], winner: null, suddenDeath: false, history: [] };
   }
-  function getMove(id) { return BASIC[id] || LOOKUP[id] || null; }
+  function getMove(id) { return BASIC[id] || LOOKUP[id] || SUDDEN[id] || null; }
   function isCard(id) { return !!LOOKUP[id]; }
-  function validMove(player, id) {
-    const move = getMove(id);
+  function validMove(player, id, suddenDeath) {
+    if (suddenDeath) return !!SUDDEN[id];
+    const move = BASIC[id] || LOOKUP[id];
     return !!move && player.hp > 0 && player.energy >= move.cost &&
       (!isCard(id) || !player.used.includes(id));
   }
-  function availableMoves(player) {
+  function availableMoves(player, suddenDeath) {
+    if (suddenDeath) return Object.keys(SUDDEN);
     return Object.keys(BASIC).concat(CARDS.map(function (c) { return c.id; }))
       .filter(function (id) { return validMove(player, id); });
   }
@@ -45,11 +55,23 @@
   function resolveTurn(game, moveA, moveB) {
     if (game.winner !== null) throw new Error("試合終了後に行動できません");
     const ids = [moveA, moveB];
+    if (game.suddenDeath) {
+      if (!SUDDEN[moveA] || !SUDDEN[moveB]) throw new Error("サドンデスでは3択だけ選べます");
+      const winner = moveA === moveB ? null : (SD_WIN[moveA] === moveB ? 0 : 1);
+      const messages = ["P1：" + SUDDEN[moveA].name, "P2：" + SUDDEN[moveB].name,
+        winner === null ? "同じ手！ サドンデス続行！" : "SUDDEN DEATH 決着！"];
+      return {
+        turn: game.turn + 1,
+        players: game.players.map(function (p) { return { hp: p.hp, energy: p.energy, used: p.used.slice() }; }),
+        winner: winner, suddenDeath: true,
+        history: game.history.concat([{ turn: game.turn, moves: ids, damages: [0, 0], messages: messages }])
+      };
+    }
     const players = game.players.map(function (p) {
       return { hp: p.hp, energy: p.energy, used: p.used.slice() };
     });
     ids.forEach(function (id, i) {
-      if (!validMove(players[i], id)) throw new Error("使用できない行動: " + id);
+      if (!validMove(players[i], id, false)) throw new Error("使用できない行動: " + id);
     });
     const log = [];
     ids.forEach(function (id, i) {
@@ -130,6 +152,11 @@
     else if (players[0].hp === 0 && players[1].hp === 0) winner = "draw";
     else if (players[0].hp === 0) winner = 1;
     else if (players[1].hp === 0) winner = 0;
+    const suddenDeath = winner === "draw";
+    if (suddenDeath) {
+      winner = null;
+      log.push("SUDDEN DEATH！ 攻撃・防御・崩しの3択で決着！");
+    }
     if (incoming[0] || incoming[1]) {
       log.push("ダメージ：P1 -" + incoming[0] + " / P2 -" + incoming[1]);
     } else {
@@ -138,11 +165,11 @@
     return {
       turn: game.turn + 1,
       players: players,
-      winner: winner,
+      winner: winner, suddenDeath: suddenDeath,
       history: game.history.concat([{ turn: game.turn, moves: ids, damages: incoming, messages: log }])
     };
   }
-  const api = { MAX_ENERGY, START_HP, CARDS, BASIC, createGame, getMove, isCard, validMove, availableMoves, resolveTurn };
+  const api = { MAX_ENERGY, START_HP, CARDS, BASIC, SUDDEN, createGame, getMove, isCard, validMove, availableMoves, resolveTurn };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root) root.LemonRules = api;
 })(typeof window !== "undefined" ? window : undefined);
