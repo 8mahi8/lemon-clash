@@ -62,6 +62,7 @@
     return {
       turn: value.turn,
       winner: value.winner === undefined ? null : value.winner,
+      suddenDeath: value.suddenDeath === true,
       history: Array.isArray(value.history) ? value.history : [],
       players: value.players.map(p => ({
         hp: p.hp, energy: p.energy, used: Array.isArray(p.used) ? p.used : []
@@ -97,7 +98,7 @@
     // A room creator must not inject a custom starting HP, energy or cards.
     if (latest.turn === 1) {
       const initial = R.createGame();
-      if (latest.winner !== initial.winner ||
+      if (latest.winner !== initial.winner || latest.suddenDeath !== initial.suddenDeath ||
           JSON.stringify(latest.history) !== JSON.stringify(initial.history) ||
           JSON.stringify(latest.players) !== JSON.stringify(initial.players)) {
         throw new Error("開始時のゲーム状態が正しくありません");
@@ -122,6 +123,7 @@
       }
     }, roomCode, window.crypto.subtle, R);
     if (!expected || expected.turn !== latest.turn || expected.winner !== latest.winner ||
+        expected.suddenDeath !== latest.suddenDeath ||
         !sameStructuredValue(expected.history, latest.history)) {
       throw new Error("両端末のターン結果が一致していません");
     }
@@ -174,7 +176,7 @@
   function createMove(id, player) {
     const move = R.getMove(id);
     const used = R.isCard(id) && player.used.includes(id);
-    const valid = R.validMove(player, id);
+    const valid = R.validMove(player, id, game.suddenDeath);
     const button = document.createElement("button");
     button.type = "button";
     button.className = "move cost" + move.cost + (preview === id ? " selected" : "") +
@@ -211,10 +213,14 @@
     if (!game || !seat) return;
     const self = game.players[seat === "host" ? 0 : 1];
     const cards = $("cards"), scroll = cards.scrollLeft;
-    $("basics").replaceChildren(...BASIC.map(id => createMove(id, self)));
-    cards.replaceChildren(...R.CARDS.map(card => createMove(card.id, self)));
+    const sudden = game.suddenDeath;
+    $("basics").replaceChildren(...(sudden ? Object.keys(R.SUDDEN) : BASIC)
+      .map(id => createMove(id, self)));
+    cards.replaceChildren(...(sudden ? [] : R.CARDS.map(card => createMove(card.id, self))));
     cards.scrollLeft = scroll;
-    $("confirm").disabled = !selected || !R.validMove(self, selected) || busy;
+    setText("basicHeading", sudden ? "SUDDEN DEATH · 最後の3択" : "基本アクション");
+    visible("specialHeading", !sudden);
+    $("confirm").disabled = !selected || !R.validMove(self, selected, sudden) || busy;
   }
   function drawLog() {
     const elem = $("logList");
@@ -243,7 +249,9 @@
       lastResultFxKey = effectKey;
     }
     const heading = document.createElement("h2");
-    if (game.winner === "draw") heading.textContent = "引き分け！";
+    if (game.winner === null && game.suddenDeath)
+      heading.textContent = last && last.moves[0].startsWith("sd_") ?
+        "同じ手！ サドンデス続行！" : "SUDDEN DEATH 突入！";
     else if (game.winner !== null) heading.textContent =
       game.winner === (seat === "host" ? 0 : 1) ? "勝利！" : "敗北…";
     else heading.textContent = "同時公開！";
@@ -317,7 +325,7 @@
     } else {
       const advance = document.createElement("button");
       advance.className = "btn";
-      advance.textContent = "次のターンへ";
+      advance.textContent = game.suddenDeath ? "サドンデスの3択へ" : "次のターンへ";
       advance.addEventListener("click", () => {
         viewedTurn = game.turn;
         showRound = false;
@@ -341,7 +349,7 @@
         game.winner === (seat === "host" ? 0 : 1) ? "勝利" : "敗北";
       setText("msg", game.winner !== null ?
         "MATCH END · " + verdict :
-        "TURN " + (game.turn - 1) + " · 行動公開");
+        (game.suddenDeath ? "SUDDEN DEATH" : "TURN " + (game.turn - 1)) + " · 行動公開");
       visible("pickArea", false);
       visible("onlineWait", false);
       visible("roundResult", true);
@@ -361,8 +369,10 @@
       setText("onlineWait", opponent && opponent.hash ?
         "両者が確定！ 行動を同時公開しています…" : "行動を確定しました。相手の選択を待っています…");
     } else drawHand();
-    setText("msg", "TURN " + game.turn + " · " + (isWaiting ?
-      "確定待機中" : "相手の行動を読んで選択しよう"));
+    setText("msg", (game.suddenDeath ? "SUDDEN DEATH" : "TURN " + game.turn) +
+      " · " + (isWaiting ? "確定待機中" :
+      game.suddenDeath ? "攻撃 ＞ 崩し ＞ 防御 ＞ 攻撃。同時に選択！" :
+      "相手の行動を読んで選択しよう"));
   }
   function showWaitingRoom() {
     visible("home", false);
@@ -379,7 +389,7 @@
   async function submit() {
     if (!game || game.winner !== null || !seat || !selected || busy || !roomRef) return;
     const own = game.players[seat === "host" ? 0 : 1];
-    if (!R.validMove(own, selected)) return;
+    if (!R.validMove(own, selected, game.suddenDeath)) return;
     const turn = game.turn, action = selected;
     const epoch = sessionEpoch, originalRoomRef = roomRef;
     const nonce = P.freshNonce(window.crypto);
