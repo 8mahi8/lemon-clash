@@ -18,8 +18,8 @@
   ]);
   const LOOKUP = Object.fromEntries(CARDS.map(function (card) { return [card.id, card]; }));
   const BASIC = Object.freeze({
-    charge: { id: "charge", name: "チャージ", cost: 0, icon: "⚡", description: "エネルギー+1" },
-    attack: { id: "attack", name: "通常攻撃", cost: 1, icon: "⚔️", description: "1ダメージ。通常防御で防げる" },
+    charge: { id: "charge", name: "チャージ", cost: 0, icon: "⚡", description: "エネルギー+1。通常攻撃を受けると獲得失敗" },
+    attack: { id: "attack", name: "通常攻撃", cost: 1, icon: "⚔️", description: "1ダメージ。相手のチャージを中断。通常防御で防げる" },
     guard: { id: "guard", name: "通常防御", cost: 0, icon: "🛡️", description: "通常攻撃と一部の特殊攻撃を防ぐ" }
   });
 
@@ -100,6 +100,12 @@
         amount = 0;
         incoming[i] += 1;
         log.push("P" + (target + 1) + "のカウンター成功！");
+      }
+      // A landed BASIC attack interrupts the opponent's charge this turn.
+      // Other special attacks do not interrupt charging, even when damaging.
+      if (id === "attack" && response === "charge" && amount > 0) {
+        gain[target] = 0;
+        log.push("P" + (target + 1) + "のチャージが通常攻撃で中断！");
       }
       incoming[target] += amount;
     }
