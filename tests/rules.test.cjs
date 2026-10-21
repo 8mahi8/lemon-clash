@@ -100,12 +100,23 @@ test("counter reflects ordinary attack and nonpiercing specials", () => {
   g = R.resolveTurn(withEnergy(4), "counter", "pierce");
   assert.deepEqual(g.players.map(p => p.hp), [2, 3]);
 });
-test("seal stops cost<=3 special, never cost 4", () => {
-  let g = R.resolveTurn(withEnergy(7), "seal", "pierce");
-  assert.equal(g.players[0].hp, 3);
-  assert.ok(g.players[1].used.includes("pierce"));
-  g = R.resolveTurn(withEnergy(7), "seal", "final");
-  assert.equal(g.players[0].hp, 1);
+test("seal stops ALL non-judgment special cards even the expensive ones", () => {
+  assert.equal(R.getMove("seal").cost, 2);
+  for (const card of R.CARDS) {
+    for (const seat of [0, 1]) {
+      const g = withEnergy(10);
+      const out = R.resolveTurn(g, ...(seat === 0 ? ["seal",card.id] : [card.id,"seal"]));
+      assert.ok(out.players[1-seat].used.includes(card.id));
+      if (card.id === "judgment") {
+        assert.equal(out.winner, 1-seat);
+      } else {
+        assert.deepEqual(out.players.map(p=>p.hp), [3,3], card.id);
+        assert.deepEqual(out.history[0].damages, [0,0], card.id);
+        assert.equal(out.players[seat].energy, 8);
+        assert.equal(out.players[1-seat].energy, 10-card.cost);
+      }
+    }
+  }
 });
 test("seal versus seal cancels both with costs spent", () => {
   const g = R.resolveTurn(withEnergy(7), "seal", "seal");
@@ -186,11 +197,14 @@ test("cards are permanently consumed even if failed", () => {
   assert.equal(R.validMove(g.players[0], "allin"), false);
   assert.throws(() => R.resolveTurn(g, "allin", "charge"));
 });
-test("simultaneous lethal attack is a draw", () => {
+test("simultaneous lethal attack enters sudden death instead of ending as a draw", () => {
   let g = game();
   g.players[0].hp = g.players[1].hp = 1;
   g = R.resolveTurn(g, "attack", "attack");
-  assert.equal(g.winner, "draw");
+  assert.equal(g.winner, null);
+  assert.equal(g.suddenDeath, true);
+  assert.deepEqual(g.players.map(p => p.hp), [0,0]);
+  assert.deepEqual(R.availableMoves(g.players[0],true), ["sd_attack","sd_guard","sd_break"]);
   assert.throws(() => R.resolveTurn(g, "charge", "charge"));
 });
 test("invalid moves never mutate state", () => {
@@ -221,9 +235,37 @@ test("judgment wins even if a simultaneous attack would otherwise be lethal", ()
     }
   }
 });
-test("simultaneous judgment is draw and requires ten energy", () => {
+test("simultaneous judgment also enters sudden death at ten energy", () => {
   assert.equal(R.validMove(game().players[0], "judgment"), false);
   assert.equal(R.validMove(withEnergy(9).players[0], "judgment"), false);
   assert.equal(R.validMove(withEnergy(10).players[0], "judgment"), true);
-  assert.equal(R.resolveTurn(withEnergy(10), "judgment", "judgment").winner, "draw");
+  const out = R.resolveTurn(withEnergy(10), "judgment", "judgment");
+  assert.equal(out.winner, null);
+  assert.equal(out.suddenDeath, true);
+});
+
+test("sudden death is fair 3-way RPS, tie repeats and spent cards remain spent", () => {
+  const g = game();
+  g.players[0].hp = g.players[1].hp = 1;
+  const sudden = R.resolveTurn(g, "attack", "attack");
+  for (const [a,b] of [["sd_attack","sd_break"],["sd_guard","sd_attack"],["sd_break","sd_guard"]]) {
+    for (const reversed of [false,true]) {
+      const moves = reversed ? [b,a] : [a,b];
+      const out = R.resolveTurn(sudden,...moves);
+      assert.equal(out.winner,reversed?1:0);
+      assert.equal(out.suddenDeath,true);
+      assert.deepEqual(out.players,sudden.players,"sudden death uses no energy or HP");
+      assert.throws(()=>R.resolveTurn(out,"sd_attack","sd_guard"),/試合終了後/);
+    }
+  }
+  for (const same of Object.keys(R.SUDDEN)) {
+    const repeat = R.resolveTurn(sudden,same,same);
+    assert.equal(repeat.winner,null);
+    assert.equal(repeat.suddenDeath,true);
+    assert.equal(repeat.turn,sudden.turn+1);
+    assert.equal(R.resolveTurn(repeat,"sd_break","sd_guard").winner,0);
+  }
+  assert.equal(R.validMove(game().players[0],"sd_attack"),false);
+  assert.equal(R.validMove(sudden.players[0],"sd_attack",true),true);
+  assert.equal(R.validMove(sudden.players[0],"allin",true),false);
 });
