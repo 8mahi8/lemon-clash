@@ -535,7 +535,7 @@ test("online judgment takes priority over a same-turn attack after nine charge r
 });
 
 
-test("HP1 vs HP1 simultaneous basic attack ends in a draw on both clients; rematch survives",async()=>{
+test("simultaneous lethal attack starts hidden-commit sudden death; ties repeat; win and rematch work",async()=>{
   const db=new InMemoryRealtimeDatabase();
   const host=client(db,"draw-host"),guest=client(db,"draw-guest");
   await host.click("onlineHost");
@@ -551,25 +551,50 @@ test("HP1 vs HP1 simultaneous basic attack ends in a draw on both clients; remat
     await host.click("confirm");await guest.click("confirm");
     await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
       "draw turn "+turn);
-    if(turn===3){
-      assert.match(host.el("myHp").textContent,/1\/3/);
-      assert.match(guest.el("myHp").textContent,/1\/3/);
-    }
   }
-  const final=db.get("lemonClashRoomsV1/"+code+"/states/6");
-  assert.equal(final.winner,"draw");
-  assert.deepEqual(final.players.map(p=>p.hp),[0,0]);
-  assert.match(host.el("roundResult").children[0].children[0].textContent,/引き分け/);
-  assert.match(guest.el("roundResult").children[0].children[0].textContent,/引き分け/);
-  assert.match(host.el("roundResult").children[0].className,/result-draw/);
-  assert.match(guest.el("roundResult").children[0].className,/result-draw/);
-  assert.match(host.el("msg").textContent,/MATCH END · 引き分け/);
-  assert.match(guest.el("msg").textContent,/MATCH END · 引き分け/);
+  const sudden=db.get("lemonClashRoomsV1/"+code+"/states/6");
+  assert.equal(sudden.winner,null);
+  assert.equal(sudden.suddenDeath,true);
+  assert.deepEqual(sudden.players.map(p=>p.hp),[0,0]);
+  assert.match(host.el("roundResult").children[0].children[0].textContent,/SUDDEN DEATH/);
+  assert.match(guest.el("roundResult").children[0].children[0].textContent,/SUDDEN DEATH/);
+  host.advance();guest.advance();
+  await waitUntil(()=>host.visible("pickArea")&&guest.visible("pickArea"),"sudden choice");
+  assert.equal(host.el("basics").children.length,3);
+  assert.equal(guest.el("basics").children.length,3);
+  assert.equal(host.el("cards").children.length,0);
+  assert.equal(host.el("specialHeading").classList.contains("hidden"),true);
+  assert.match(host.el("msg").textContent,/SUDDEN DEATH/);
+  host.card("攻撃");
+  await host.click("confirm");
+  assert.equal(db.get("lemonClashRoomsV1/"+code+"/rounds/6/host").reveal,undefined,
+    "sudden choice remains secret until BOTH players commit");
+  guest.card("攻撃");
+  await guest.click("confirm");
+  await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
+    "sudden tie repeat");
+  const tied=db.get("lemonClashRoomsV1/"+code+"/states/7");
+  assert.equal(tied.winner,null);
+  assert.equal(tied.suddenDeath,true);
+  assert.deepEqual(tied.players,sudden.players,"tie costs no resources");
+  assert.match(host.el("roundResult").children[0].children[0].textContent,/同じ手/);
+  host.advance();guest.advance();
+  host.card("防御");guest.card("攻撃");
+  await host.click("confirm");await guest.click("confirm");
+  await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
+    "sudden guard beats attack");
+  const decided=db.get("lemonClashRoomsV1/"+code+"/states/8");
+  assert.equal(decided.winner,0);
+  assert.equal(decided.suddenDeath,true);
+  assert.deepEqual(decided.players,tied.players,"winner chosen without HP restoration");
+  assert.match(host.el("roundResult").children[0].children[0].textContent,/勝利/);
+  assert.match(guest.el("roundResult").children[0].children[0].textContent,/敗北/);
   await host.el("roundResult").children[0].children[3].click();
   await guest.el("roundResult").children[0].children[3].click();
-  await waitUntil(()=>host.visible("pickArea")&&guest.visible("pickArea"),"draw rematch");
-  assert.deepEqual(db.get("lemonClashRoomsV1/"+code+"/states/1").players.map(p=>p.hp),
-    [3,3]);
+  await waitUntil(()=>host.visible("pickArea")&&guest.visible("pickArea"),"sudden rematch");
+  const restarted=db.get("lemonClashRoomsV1/"+code+"/states/1");
+  assert.deepEqual(restarted.players.map(p=>p.hp),[3,3]);
+  assert.equal(restarted.suddenDeath,false);
   assert.deepEqual(db.failures,[]);
 });
 
