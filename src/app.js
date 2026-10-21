@@ -49,15 +49,15 @@
     $("myHp").textContent = "♥ " + self.hp;
     $("myEn").textContent = "⚡ " + self.energy;
     $("opHp").textContent = "♥ " + foe.hp;
-    $("opEn").textContent = "⚡ " + foe.energy + "/7";
+    $("opEn").textContent = "⚡ " + foe.energy + "/" + R.MAX_ENERGY;
     $("opMeter").classList.toggle("danger", foe.energy >= R.MAX_ENERGY);
     $("opWarning").classList.toggle("hidden", foe.energy < R.MAX_ENERGY);
-    $("myHp").textContent += "/5";
-    $("opHp").textContent += "/5";
-    $("myEn").textContent += "/7";
+    $("myHp").textContent += "/" + R.START_HP;
+    $("opHp").textContent += "/" + R.START_HP;
+    $("myEn").textContent += "/" + R.MAX_ENERGY;
     for (const [id, value] of [["myMeter", self.energy], ["opMeter", foe.energy]]) {
       const meter = $(id); meter.replaceChildren();
-      for (let n = 0; n < 7; n++) { const seg = document.createElement("i"); if (n < value) seg.className = "on"; meter.append(seg); }
+      for (let n = 0; n < R.MAX_ENERGY; n++) { const seg = document.createElement("i"); if (n < value) seg.className = "on"; meter.append(seg); }
     }
   }
 
@@ -165,7 +165,7 @@
       weights.guard = 12;
       weights.judgment = 30;
     }
-    if (player.energy === 7 && moves.includes("judgment")) return "judgment";
+    if (player.energy >= R.MAX_ENERGY && moves.includes("judgment")) return "judgment";
     if (enemy.hp === 1) {
       weights.pierce = 25;
       weights.crush = 16;
