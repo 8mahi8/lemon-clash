@@ -284,7 +284,7 @@ test("independent simulated clients complete a 5-turn HP3 match, reject stranger
   for(let turn=1;turn<=5;turn++){
     if(turn>1){host.advance();guest.advance();}
     const hostAction=turn===1||turn%2===1?"通常攻撃":"チャージ";
-    const guestAction=turn===2?"通常攻撃":"チャージ";
+    const guestAction=turn===5?"通常攻撃":"チャージ";
     host.card(hostAction);guest.card(guestAction);
     await host.click("confirm");
     if(turn===1){
@@ -316,6 +316,35 @@ test("independent simulated clients complete a 5-turn HP3 match, reject stranger
   assert.deepEqual(db.failures,[]);
 });
 
+
+test("online mirrored turns keep HP and energy in sync after charge interruption",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"charge-block-host"),guest=client(db,"charge-block-guest");
+  await host.click("onlineHost");
+  await waitUntil(()=>host.visible("onlineLobby"),"interrupt lobby");
+  const code=host.el("lobbyCode").textContent;
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"interrupt join");
+  host.card("通常攻撃");guest.card("チャージ");
+  await host.click("confirm");await guest.click("confirm");
+  await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"interrupt first reveal");
+  let state=db.get("lemonClashRoomsV1/"+code+"/states/2");
+  assert.deepEqual(state.players.map(p=>[p.hp,p.energy]),[[3,0],[2,1]]);
+  assert.match(state.history[0].messages.join(" "),/P2のチャージが通常攻撃で中断/);
+  assert.match(host.el("opEn").textContent,/1\/7/);
+  assert.match(guest.el("myEn").textContent,/1\/7/);
+  host.advance();guest.advance();
+  host.card("チャージ");guest.card("通常攻撃");
+  await host.click("confirm");await guest.click("confirm");
+  await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"interrupt reverse reveal");
+  state=db.get("lemonClashRoomsV1/"+code+"/states/3");
+  assert.deepEqual(state.players.map(p=>[p.hp,p.energy]),[[2,0],[2,0]]);
+  assert.match(state.history[1].messages.join(" "),/P1のチャージが通常攻撃で中断/);
+  assert.match(host.el("myEn").textContent,/0\/7/);
+  assert.match(guest.el("opEn").textContent,/0\/7/);
+  assert.deepEqual(db.failures,[]);
+});
 
 test("Phase 3 result cards show both actions and damage from each player's perspective",async()=>{
   const db=new InMemoryRealtimeDatabase();
@@ -534,7 +563,7 @@ test("HP1 vs HP1 simultaneous basic attack ends in a draw on both clients; remat
   assert.deepEqual(db.failures,[]);
 });
 
-test("HP1 player wins with judgment while rival's simultaneous attack would be lethal",async()=>{
+test("HP1 player still reaches judgment despite two charge interruptions and wins against lethal attack",async()=>{
   const db=new InMemoryRealtimeDatabase();
   const host=client(db,"lethal-judgment-host"),guest=client(db,"lethal-judgment-guest");
   await host.click("onlineHost");
@@ -543,7 +572,8 @@ test("HP1 player wins with judgment while rival's simultaneous attack would be l
   guest.el("roomInput").value=code;
   await guest.click("onlineJoin");
   await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"lethal judgment joined");
-  for(let turn=1;turn<=6;turn++){
+  // Two interrupted charges postpone the ultimate by two extra turns.
+  for(let turn=1;turn<=8;turn++){
     if(turn>1){host.advance();guest.advance();}
     host.card("チャージ");
     guest.card(turn===1||turn===3?"通常攻撃":"チャージ");
@@ -558,7 +588,7 @@ test("HP1 player wins with judgment while rival's simultaneous attack would be l
   await host.click("confirm");await guest.click("confirm");
   await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
     "lethal judgment result");
-  const final=db.get("lemonClashRoomsV1/"+code+"/states/8");
+  const final=db.get("lemonClashRoomsV1/"+code+"/states/10");
   assert.equal(final.winner,0);
   assert.deepEqual(final.players.map(p=>p.hp),[1,3],
     "judgment must protect the declarer's remaining HP");
