@@ -14,7 +14,7 @@ test("initial state and eleven unique one-use cards", () => {
   assert.equal(g.players[0].energy, 1);
   assert.equal(R.START_HP, 3);
   assert.deepEqual(g.players.map(p => p.hp), [3, 3]);
-  assert.equal(R.MAX_ENERGY, 7);
+  assert.equal(R.MAX_ENERGY, 10);
   assert.equal(R.CARDS.length, 11);
   assert.equal(new Set(R.CARDS.map(c => c.id)).size, 11);
 });
@@ -72,9 +72,9 @@ test("guard is free and does not grant energy", () => {
   assert.equal(g.players[1].hp, 3);
   assert.equal(g.players[1].energy, 1);
 });
-test("charge capped at seven", () => {
-  const g = R.resolveTurn(withEnergy(7), "charge", "charge");
-  assert.deepEqual(g.players.map(p => p.energy), [7, 7]);
+test("charge capped at ten", () => {
+  const g = R.resolveTurn(withEnergy(10), "charge", "charge");
+  assert.deepEqual(g.players.map(p => p.energy), [10, 10]);
 });
 test("energy drain steals only a charge: +2 minus cost 1", () => {
   let g = R.resolveTurn(withEnergy(3), "drain", "charge");
@@ -202,7 +202,7 @@ test("invalid moves never mutate state", () => {
 
 test("judgment wins regardless of opponent action", () => {
   for (const id of ["guard", "read", "seal", "counter", "allin", "attack"]) {
-    const g = withEnergy(7);
+    const g = withEnergy(10);
     assert.equal(R.resolveTurn(g, "judgment", id).winner, 0);
   }
 });
@@ -210,7 +210,7 @@ test("judgment wins even if a simultaneous attack would otherwise be lethal", ()
   for (const counterMove of ["attack", "pierce", "volley", "crush", "final", "allin"]) {
     // Test BOTH seats; HP 1 ensures every unblocked attack is lethal.
     for (const declaring of [0, 1]) {
-      const g = withEnergy(7);
+      const g = withEnergy(10);
       g.players[0].hp = g.players[1].hp = 1;
       const a = declaring === 0 ? "judgment" : counterMove;
       const b = declaring === 1 ? "judgment" : counterMove;
@@ -221,7 +221,9 @@ test("judgment wins even if a simultaneous attack would otherwise be lethal", ()
     }
   }
 });
-test("simultaneous judgment is draw and requires seven energy", () => {
+test("simultaneous judgment is draw and requires ten energy", () => {
   assert.equal(R.validMove(game().players[0], "judgment"), false);
-  assert.equal(R.resolveTurn(withEnergy(7), "judgment", "judgment").winner, "draw");
+  assert.equal(R.validMove(withEnergy(9).players[0], "judgment"), false);
+  assert.equal(R.validMove(withEnergy(10).players[0], "judgment"), true);
+  assert.equal(R.resolveTurn(withEnergy(10), "judgment", "judgment").winner, "draw");
 });
