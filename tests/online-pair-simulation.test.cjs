@@ -332,8 +332,8 @@ test("online mirrored turns keep HP and energy in sync after charge interruption
   let state=db.get("lemonClashRoomsV1/"+code+"/states/2");
   assert.deepEqual(state.players.map(p=>[p.hp,p.energy]),[[3,0],[2,1]]);
   assert.match(state.history[0].messages.join(" "),/P2のチャージが通常攻撃で中断/);
-  assert.match(host.el("opEn").textContent,/1\/7/);
-  assert.match(guest.el("myEn").textContent,/1\/7/);
+  assert.match(host.el("opEn").textContent,/1\/10/);
+  assert.match(guest.el("myEn").textContent,/1\/10/);
   host.advance();guest.advance();
   host.card("チャージ");guest.card("通常攻撃");
   await host.click("confirm");await guest.click("confirm");
@@ -341,8 +341,8 @@ test("online mirrored turns keep HP and energy in sync after charge interruption
   state=db.get("lemonClashRoomsV1/"+code+"/states/3");
   assert.deepEqual(state.players.map(p=>[p.hp,p.energy]),[[2,0],[2,0]]);
   assert.match(state.history[1].messages.join(" "),/P1のチャージが通常攻撃で中断/);
-  assert.match(host.el("myEn").textContent,/0\/7/);
-  assert.match(guest.el("opEn").textContent,/0\/7/);
+  assert.match(host.el("myEn").textContent,/0\/10/);
+  assert.match(guest.el("opEn").textContent,/0\/10/);
   assert.deepEqual(db.failures,[]);
 });
 
@@ -490,7 +490,7 @@ test("rejects a tampered initial match before either player can play",async()=>{
 });
 
 
-test("online judgment takes priority over a same-turn attack after six charge rounds",async()=>{
+test("online judgment takes priority over a same-turn attack after nine charge rounds",async()=>{
   const db=new InMemoryRealtimeDatabase();
   const host=client(db,"ultimate-host"),guest=client(db,"ultimate-guest");
   await host.click("onlineHost");
@@ -499,22 +499,22 @@ test("online judgment takes priority over a same-turn attack after six charge ro
   guest.el("roomInput").value=code;
   await guest.click("onlineJoin");
   await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"ultimate-room joined");
-  for(let turn=1;turn<=6;turn++){
+  for(let turn=1;turn<=9;turn++){
     if(turn>1){host.advance();guest.advance();}
     host.card("チャージ");guest.card("チャージ");
     await host.click("confirm");await guest.click("confirm");
     await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"charge "+turn);
   }
-  assert.match(host.el("myEn").textContent,/7\/7/);
+  assert.match(host.el("myEn").textContent,/10\/10/);
   host.advance();guest.advance();
   host.card("終局宣告");
   await host.click("confirm");
-  const hostEntry=db.get("lemonClashRoomsV1/"+code+"/rounds/7/host");
+  const hostEntry=db.get("lemonClashRoomsV1/"+code+"/rounds/10/host");
   assert.equal(hostEntry.reveal,undefined,"ultimate choice must remain secret before both commits");
   guest.card("通常攻撃");
   await guest.click("confirm");
   await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"ultimate reveal");
-  const final=db.get("lemonClashRoomsV1/"+code+"/states/8");
+  const final=db.get("lemonClashRoomsV1/"+code+"/states/11");
   assert.equal(final.winner,0);
   assert.deepEqual(final.players.map(p=>p.hp),[3,3], "judgment bearer takes no damage");
   assert.match(final.history[final.history.length-1].messages.join(" "),/終局宣告が成立/);
@@ -572,8 +572,8 @@ test("HP1 player still reaches judgment despite two charge interruptions and win
   guest.el("roomInput").value=code;
   await guest.click("onlineJoin");
   await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"lethal judgment joined");
-  // Two interrupted charges postpone the ultimate by two extra turns.
-  for(let turn=1;turn<=8;turn++){
+  // Two interrupted charges postpone the ten-energy ultimate by two extra turns.
+  for(let turn=1;turn<=11;turn++){
     if(turn>1){host.advance();guest.advance();}
     host.card("チャージ");
     guest.card(turn===1||turn===3?"通常攻撃":"チャージ");
@@ -582,13 +582,13 @@ test("HP1 player still reaches judgment despite two charge interruptions and win
       "lethal judgment setup "+turn);
   }
   assert.match(host.el("myHp").textContent,/1\/3/);
-  assert.match(host.el("myEn").textContent,/7\/7/);
+  assert.match(host.el("myEn").textContent,/10\/10/);
   host.advance();guest.advance();
   host.card("終局宣告");guest.card("通常攻撃");
   await host.click("confirm");await guest.click("confirm");
   await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),
     "lethal judgment result");
-  const final=db.get("lemonClashRoomsV1/"+code+"/states/10");
+  const final=db.get("lemonClashRoomsV1/"+code+"/states/13");
   assert.equal(final.winner,0);
   assert.deepEqual(final.players.map(p=>p.hp),[1,3],
     "judgment must protect the declarer's remaining HP");
