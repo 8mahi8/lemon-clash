@@ -9,7 +9,7 @@
     { id: "read", name: "見切り", cost: 1, icon: "👁️", type: "defense", description: "相手の特殊攻撃カードを無効化" },
     { id: "pierce", name: "貫通攻撃", cost: 2, icon: "🗡️", type: "attack", description: "通常防御を貫通して1ダメージ" },
     { id: "counter", name: "カウンター", cost: 2, icon: "🪞", type: "defense", description: "通常攻撃・連撃・オールインを防いで1ダメージ反射" },
-    { id: "seal", name: "封印", cost: 2, icon: "🔒", type: "control", description: "相手のコスト3以下の特殊カードを無効化" },
+    { id: "seal", name: "封印", cost: 2, icon: "🔒", type: "control", description: "終局宣告以外の特殊カードをすべて無効化" },
     { id: "volley", name: "連撃", cost: 3, icon: "⚔️", type: "attack", description: "2ダメージ。通常防御には防がれる" },
     { id: "crush", name: "粉砕", cost: 3, icon: "💥", type: "attack", description: "通常防御に2ダメージ、それ以外には1ダメージ" },
     { id: "final", name: "終焉の一撃", cost: 4, icon: "☄️", type: "attack", description: "2ダメージ。通常防御でも1ダメージ" },
@@ -62,7 +62,7 @@
     const cancelled = [false, false];
     for (let i = 0; i < 2; i++) {
       const other = 1 - i;
-      if (ids[i] === "seal" && isCard(ids[other]) && getMove(ids[other]).cost <= 3) {
+      if (ids[i] === "seal" && isCard(ids[other]) && ids[other] !== "judgment") {
         cancelled[other] = true;
       }
     }
