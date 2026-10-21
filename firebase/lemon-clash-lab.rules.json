@@ -3,7 +3,7 @@
     "lemonClashRoomsV1": {
       "$room": {
         ".read": "auth != null && (!data.exists() || data.child('hostUid').val() === auth.uid || data.child('guestUid').val() === auth.uid || (!data.child('guestUid').exists() && data.child('createdAt').val() > now - 7200000))",
-        ".write": "auth != null && !data.exists() && $room.matches(/^[0-9]{6}$/) && newData.child('protocol').val() === 1 && newData.child('hostUid').val() === auth.uid && !newData.child('guestUid').exists() && newData.child('createdAt').val() > now - 300000 && newData.child('createdAt').val() < now + 300000 && newData.child('states').child('1').child('turn').val() === 1",
+        ".write": "auth != null && !data.exists() && $room.matches(/^[0-9]{6}$/) && newData.child('protocol').val() === 2 && newData.child('hostUid').val() === auth.uid && !newData.child('guestUid').exists() && newData.child('createdAt').val() > now - 300000 && newData.child('createdAt').val() < now + 300000 && newData.child('states').child('1').child('turn').val() === 1",
         "guestUid": {
           ".write": "auth != null && !data.exists() && newData.val() === auth.uid && auth.uid !== data.parent().child('hostUid').val() && data.parent().child('createdAt').val() > now - 7200000"
         },
