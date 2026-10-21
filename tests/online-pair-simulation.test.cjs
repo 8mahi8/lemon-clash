@@ -506,6 +506,16 @@ test("online judgment takes priority over a same-turn attack after nine charge r
     await waitUntil(()=>host.visible("roundResult")&&guest.visible("roundResult"),"charge "+turn);
   }
   assert.match(host.el("myEn").textContent,/10\/10/);
+  assert.match(guest.el("opEn").textContent,/10\/10/,
+    "both players must display the new energy cap");
+  assert.equal(host.el("myMeter").children.length,10,
+    "the player meter must have ten energy segments");
+  assert.equal(guest.el("opMeter").children.length,10,
+    "the rival meter must have ten energy segments");
+  assert.equal(host.visible("opWarning"),true,
+    "a fully charged opponent must display the ultimate warning");
+  assert.equal(guest.visible("opWarning"),true,
+    "warning must agree on both endpoints");
   host.advance();guest.advance();
   host.card("終局宣告");
   await host.click("confirm");
