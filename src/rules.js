@@ -1,7 +1,7 @@
 /* LEMON CLASH rules v0.1 — deterministic, dependency-free */
 (function (root) {
   "use strict";
-  const MAX_ENERGY = 7;
+  const MAX_ENERGY = 10;
   const START_HP = 3;
   const CARDS = Object.freeze([
     { id: "feint", name: "フェイント", cost: 1, icon: "🎭", type: "utility", description: "相手が通常防御ならエネルギー+3" },
@@ -14,7 +14,7 @@
     { id: "crush", name: "粉砕", cost: 3, icon: "💥", type: "attack", description: "通常防御に2ダメージ、それ以外には1ダメージ" },
     { id: "final", name: "終焉の一撃", cost: 4, icon: "☄️", type: "attack", description: "2ダメージ。通常防御でも1ダメージ" },
     { id: "allin", name: "オールイン", cost: 5, icon: "🔥", type: "attack", description: "3ダメージ。通常防御には防がれる" },
-    { id: "judgment", name: "終局宣告", cost: 7, icon: "👑", type: "ultimate", description: "使用が成立した時点で勝利。防御・見切り・封印・カウンター無効" }
+    { id: "judgment", name: "終局宣告", cost: 10, icon: "👑", type: "ultimate", description: "使用が成立した時点で勝利。防御・見切り・封印・カウンター無効" }
   ]);
   const LOOKUP = Object.fromEntries(CARDS.map(function (card) { return [card.id, card]; }));
   const BASIC = Object.freeze({
