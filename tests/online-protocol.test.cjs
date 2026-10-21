@@ -12,7 +12,7 @@ async function sampleRoom(a, b) {
     host: await P.makeCommit(roomId, 1, uid[0], a, nonceA, webcrypto.subtle),
     guest: await P.makeCommit(roomId, 1, uid[1], b, nonceB, webcrypto.subtle)
   };
-  return { protocol: 1, hostUid: uid[0], guestUid: uid[1], game,
+  return { protocol: P.VERSION, hostUid: uid[0], guestUid: uid[1], game,
     round: { ...P.emptyRound(1), commits,
       reveals: { host: { action: a, nonce: nonceA }, guest: { action: b, nonce: nonceB } } } };
 }
