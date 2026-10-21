@@ -1,7 +1,7 @@
 name: Lemon Clash checks
 on:
   push:
-    branches: [main]
+    branches: [main, dev/ipad-hand-ui]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -18,17 +18,60 @@ jobs:
         run: |
           node --check src/rules.js
           node --check src/app.js
+          node --check tests/ui-webkit.cjs
+          node --check tests/online-lab-ui-webkit.cjs
+          node --check tests/sites-paste-webkit.cjs
+          node --check tests/sites-paste.test.cjs
+          node --check src/online-protocol.js
+          node --check src/online-app.js
           node --check tools/build-embed.cjs
       - name: Card rules tests
-        run: node --test tests/rules.test.cjs
+        run: node --test tests/*.test.cjs
       - name: Build one-file HTML for Google Sites
         run: node tools/build-embed.cjs
       - name: Check inlined scripts
         run: |
           test -s dist/lemon-clash-embed.html
+          test -s dist/lemon-clash-online-lab-embed.html
+          test -s dist/lemon-clash-embed.txt
+          test -s dist/lemon-clash-online-lab-embed.txt
+          cmp dist/lemon-clash-embed.html dist/lemon-clash-embed.txt
+          cmp dist/lemon-clash-online-lab-embed.html dist/lemon-clash-online-lab-embed.txt
           ! grep -q 'src="src/' dist/lemon-clash-embed.html
+          ! grep -q 'src="src/' dist/lemon-clash-online-lab-embed.html
       - name: Save Google Sites HTML
         uses: actions/upload-artifact@v4
         with:
           name: lemon-clash-google-sites-html
-          path: dist/lemon-clash-embed.html
+          path: |
+            dist/lemon-clash-embed.html
+            dist/lemon-clash-online-lab-embed.html
+            dist/lemon-clash-embed.txt
+            dist/lemon-clash-online-lab-embed.txt
+
+  ipad-ui-webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install WebKit test runner
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps webkit
+      - name: Build standalone Google Sites HTML
+        run: node tools/build-embed.cjs
+      - name: iPad, pass-and-play and Google Sites-like iframe checks
+        run: |
+          node tests/ui-webkit.cjs
+          node tests/online-lab-ui-webkit.cjs
+          node tests/sites-paste-webkit.cjs
+      - name: Save screenshots even if UI checks fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lemon-clash-ipad-ui-screenshots
+          path: artifacts/ui-screens
+          if-no-files-found: ignore

@@ -8,6 +8,7 @@
   let mode = "bot";
   let acting = 0;
   let selected = null;
+  let preview = null;
   let firstMove = null;
   let inResults = false;
   const BASIC_ORDER = ["charge", "attack", "guard"];
@@ -17,14 +18,29 @@
     game = R.createGame();
     acting = 0;
     selected = null;
+    preview = null;
     firstMove = null;
     inResults = false;
+    resetCardDetail();
     $("home").classList.add("hidden");
     $("battle").classList.remove("hidden");
     $("roundResult").classList.add("hidden");
     $("pickArea").classList.remove("hidden");
     $("handoff").classList.add("hidden");
     render();
+  }
+
+  function resetCardDetail() {
+    const detail = $("cardDetail");
+    detail.replaceChildren();
+    const title = document.createElement("strong");
+    title.textContent = game && game.suddenDeath ? "⚡ SUDDEN DEATH" : "カードを選ぼう";
+    const description = document.createElement("p");
+    description.textContent = game && game.suddenDeath ?
+      "攻撃 ＞ 崩し ＞ 防御 ＞ 攻撃。同じ手ならもう一度選び直し。" :
+      "カードをタップすると持ち上がり、ここに能力が表示されます。";
+    detail.append(title, description);
+    $("selectedDetail").textContent = "行動を選択してください";
   }
 
   function status() {
@@ -35,18 +51,28 @@
     $("myHp").textContent = "♥ " + self.hp;
     $("myEn").textContent = "⚡ " + self.energy;
     $("opHp").textContent = "♥ " + foe.hp;
-    $("opEn").textContent = "⚡ " + foe.energy;
+    $("opEn").textContent = "⚡ " + foe.energy + "/" + R.MAX_ENERGY;
+    $("opMeter").classList.toggle("danger", foe.energy >= R.MAX_ENERGY);
+    $("opWarning").classList.toggle("hidden", game.suddenDeath || foe.energy < R.MAX_ENERGY);
+    $("myHp").textContent += "/" + R.START_HP;
+    $("opHp").textContent += "/" + R.START_HP;
+    $("myEn").textContent += "/" + R.MAX_ENERGY;
+    for (const [id, value] of [["myMeter", self.energy], ["opMeter", foe.energy]]) {
+      const meter = $(id); meter.replaceChildren();
+      for (let n = 0; n < R.MAX_ENERGY; n++) { const seg = document.createElement("i"); if (n < value) seg.className = "on"; meter.append(seg); }
+    }
   }
 
   function moveButton(id, player) {
     const move = R.getMove(id);
     const used = R.isCard(id) && player.used.includes(id);
-    const canPlay = R.validMove(player, id);
+    const canPlay = R.validMove(player, id, game.suddenDeath);
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "move cost" + move.cost + (selected === id ? " selected" : "");
-    btn.disabled = !canPlay;
-    btn.setAttribute("aria-pressed", selected === id ? "true" : "false");
+    btn.className = "move cost" + move.cost + (preview === id ? " selected" : "");
+    btn.disabled = used;
+    if (!canPlay && !used) btn.classList.add("unaffordable");
+    btn.setAttribute("aria-pressed", preview === id ? "true" : "false");
     btn.setAttribute("aria-label", move.name + " 消費" + move.cost + (used ? " 使用済み" : ""));
     const badge = document.createElement("span");
     badge.className = "cost";
@@ -62,10 +88,19 @@
     desc.textContent = used ? "使用済み" : move.description;
     btn.append(badge, icon, name, desc);
     btn.addEventListener("click", () => {
-      selected = id;
+      preview = id;
+      if (!canPlay) {
+        $("selectedDetail").textContent = "エネルギーが足りません（必要 ⚡" + move.cost + "）";
+        $("confirm").disabled = true;
+        selected = null;
+      } else selected = id;
       renderMoves();
       $("selectedDetail").textContent = move.name + "： " + move.description;
-      $("confirm").disabled = false;
+      $("cardDetail").replaceChildren();
+      const title = document.createElement("strong"); title.textContent = move.icon + " " + move.name + " · ⚡" + move.cost;
+      const detail = document.createElement("p"); detail.textContent = move.description + (R.isCard(id) ? "（使い切り）" : "（何度でも使用可能）");
+      $("cardDetail").append(title, detail);
+      $("confirm").disabled = !canPlay;
     });
     return btn;
   }
@@ -74,9 +109,14 @@
     const player = game.players[acting];
     const basics = $("basics");
     const cards = $("cards");
-    basics.replaceChildren(...BASIC_ORDER.map(id => moveButton(id, player)));
-    cards.replaceChildren(...R.CARDS.map(card => moveButton(card.id, player)));
-    $("confirm").disabled = !selected || !R.validMove(player, selected);
+    const cardScroll = cards.scrollLeft;
+    basics.replaceChildren(...(game.suddenDeath ? Object.keys(R.SUDDEN) : BASIC_ORDER)
+      .map(id => moveButton(id, player)));
+    cards.replaceChildren(...(game.suddenDeath ? [] : R.CARDS.map(card => moveButton(card.id, player))));
+    cards.scrollLeft = cardScroll;
+    $("basicHeading").textContent = game.suddenDeath ? "SUDDEN DEATH · 最後の3択" : "基本アクション";
+    $("specialHeading").classList.toggle("hidden", !!game.suddenDeath);
+    $("confirm").disabled = !selected || !R.validMove(player, selected, game.suddenDeath);
     if (!selected) $("selectedDetail").textContent = "行動を選択してください";
   }
 
@@ -101,7 +141,7 @@
   function render() {
     if (!game) return;
     status();
-    $("msg").textContent = "TURN " + game.turn + " · PLAYER " + (acting + 1) + " の行動を選ぼう";
+    $("msg").textContent = (game.suddenDeath ? "SUDDEN DEATH" : "TURN " + game.turn) + " · PLAYER " + (acting + 1) + " の行動を選ぼう";
     $("pickArea").classList.toggle("hidden", inResults);
     $("roundResult").classList.toggle("hidden", !inResults);
     if (!inResults) renderMoves();
@@ -109,16 +149,17 @@
   }
 
   function botMove() {
+    if (game.suddenDeath) return Object.keys(R.SUDDEN)[Math.floor(Math.random() * 3)];
     const player = game.players[1];
     const enemy = game.players[0];
     const moves = R.availableMoves(player);
     const weights = {
       charge: 20, attack: 20, guard: 15,
       feint: 7, drain: 9, read: 7, pierce: 10, counter: 11,
-      seal: 8, volley: 7, crush: 11, final: 7, allin: 7
+      seal: 8, volley: 7, crush: 11, final: 7, allin: 7, judgment: 100
     };
     if (player.energy === 0) { weights.charge = 90; weights.guard = 10; }
-    if (player.energy >= 6) weights.charge = 0;
+    if (player.energy >= R.MAX_ENERGY) weights.charge = 0;
     if (enemy.energy === 0) {
       weights.guard = 2;
       weights.attack = 24;
@@ -128,7 +169,9 @@
       weights.read = 16;
       weights.counter = 18;
       weights.guard = 12;
+      weights.judgment = 30;
     }
+    if (player.energy >= R.MAX_ENERGY && moves.includes("judgment")) return "judgment";
     if (enemy.hp === 1) {
       weights.pierce = 25;
       weights.crush = 16;
@@ -146,11 +189,13 @@
   }
 
   function commit() {
-    if (!game || inResults || !selected || !R.validMove(game.players[acting], selected)) return;
+    if (!game || inResults || !selected || !R.validMove(game.players[acting], selected, game.suddenDeath)) return;
     const move = selected;
     selected = null;
+    preview = null;
     if (mode === "local" && acting === 0) {
       firstMove = move;
+      resetCardDetail(); // 直前の選択情報を次の人に見せない
       $("handoffTitle").textContent = "PLAYER 2 に端末を渡そう";
       $("handoffBody").textContent = "PLAYER 1 の選択は確定したよ。PLAYER 2 は見ないで選択してね。";
       $("handoffProceed").textContent = "PLAYER 2 の選択へ";
@@ -200,12 +245,14 @@
     const button = document.createElement("button");
     button.className = "btn";
     if (game.winner === null) {
-      headline.textContent = "次の一手を読め。";
-      button.textContent = "次のターンへ";
+      headline.textContent = game.suddenDeath ? "SUDDEN DEATH！ 3択で決着！" : "次の一手を読め。";
+      button.textContent = game.suddenDeath ? "サドンデスの3択へ" : "次のターンへ";
       button.addEventListener("click", () => {
         inResults = false;
         acting = 0;
         selected = null;
+        preview = null;
+        resetCardDetail();
         render();
       });
     } else {
@@ -228,7 +275,7 @@
     render();
   });
   $("quit").addEventListener("click", () => {
-    game = null; firstMove = null; selected = null;
+    game = null; firstMove = null; selected = null; preview = null;
     $("handoff").classList.add("hidden");
     $("battle").classList.add("hidden");
     $("home").classList.remove("hidden");
