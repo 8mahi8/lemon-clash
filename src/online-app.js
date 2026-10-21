@@ -142,9 +142,11 @@
     const info = $("cardDetail");
     info.replaceChildren();
     const heading = document.createElement("strong");
-    heading.textContent = "カードを選ぼう";
+    heading.textContent = game && game.suddenDeath ? "⚡ SUDDEN DEATH" : "カードを選ぼう";
     const detail = document.createElement("p");
-    detail.textContent = "カードを選択すると、ここに能力が表示されます。";
+    detail.textContent = game && game.suddenDeath ?
+      "攻撃は崩しに、崩しは防御に、防御は攻撃に勝つ。相手と同じ手ならもう一度。" :
+      "カードを選択すると、ここに能力が表示されます。";
     info.append(heading, detail);
     setText("selectedDetail", "行動を選択してください");
   }
@@ -162,7 +164,8 @@
     $("myFighter").classList.toggle("critical", self.hp === 1 && game.winner === null);
     $("opFighter").classList.toggle("critical", other.hp === 1 && game.winner === null);
     $("opMeter").classList.toggle("danger", other.energy >= R.MAX_ENERGY);
-    visible("opWarning", other.energy >= R.MAX_ENERGY && game.winner === null);
+    visible("opWarning", other.energy >= R.MAX_ENERGY &&
+      !game.suddenDeath && game.winner === null);
     for (const [id, n] of [["myMeter", self.energy], ["opMeter", other.energy]]) {
       const meter = $(id);
       meter.replaceChildren();
