@@ -147,11 +147,11 @@ test("All In is not faster than three basic attacks against an undefended player
     // Normal guard defends both, so this is only an action legality check.
     assert.equal(g.winner, null);
   }
-  // Opponent plays an otherwise harmless non-defensive move instead.
+  // Against a player who repeatedly charges, both finish on turn five.
   for (const sequence of [allin, basics]) {
     let g = game();
     for (const action of sequence) {
-      g = R.resolveTurn(g, action, "read");
+      g = R.resolveTurn(g, action, "charge");
     }
     assert.equal(g.winner, 0, "both baseline strategies win on turn five");
   }
