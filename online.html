@@ -28,7 +28,7 @@
     .move{position:relative;text-align:left;border:1px solid var(--line);border-radius:14px;padding:13px;min-height:118px;background:#26363c;color:var(--text);display:flex;flex-direction:column;gap:4px;transition:transform .08s,border-color .1s}
     .move:not(:disabled):active{transform:scale(.98)}.move:disabled{opacity:.32;cursor:not-allowed}.move.selected{outline:2px solid var(--lime);border-color:var(--lime)}
     .move .symbol{font-size:27px;line-height:1.4}.move .movename{font-weight:900;font-size:13px}.move .effect{font-size:11px;color:var(--muted)}.move .cost{position:absolute;top:9px;right:10px;font-size:11px;font-weight:900;border-radius:20px;background:#101b20;padding:3px 7px;color:var(--gold)}
-    .move.cost1{background:linear-gradient(150deg,#223d56,#24343e)}.move.cost2{background:linear-gradient(150deg,#264238,#22373a)}.move.cost3{background:linear-gradient(150deg,#4e402e,#2e3434)}.move.cost7{background:linear-gradient(150deg,#8d6c2a,#42351d);border-color:#e8ca76;color:#fff1c4}.move.cost4{background:linear-gradient(150deg,#512d39,#33333b)}
+    .move.cost1{background:linear-gradient(150deg,#223d56,#24343e)}.move.cost2{background:linear-gradient(150deg,#264238,#22373a)}.move.cost3{background:linear-gradient(150deg,#4e402e,#2e3434)}.move.cost10{background:linear-gradient(150deg,#8d6c2a,#42351d);border-color:#e8ca76;color:#fff1c4}.move.cost4,.move.cost5{background:linear-gradient(150deg,#512d39,#33333b)}
     .controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:17px}.controls .btn{min-width:190px}.log{margin-top:12px;padding:10px 14px}.log summary{cursor:pointer;font-weight:850;list-style-position:inside}.log[open] #logList{margin-top:8px}
     .logrow{border-top:1px solid var(--line);padding:9px 1px;font-size:12px;color:var(--muted)}.logrow strong{color:var(--text)}
     /* Phase 3: readable, silent simultaneous-reveal presentation; no gameplay changes. */
@@ -123,7 +123,7 @@
       <div id="onlineWait" class="waitStatus hidden" role="status" aria-live="polite">相手の選択を待っています…</div>
       <div id="roundResult" class="hidden"></div>
       <details class="log panel"><summary>対戦ログを見る</summary><div id="logList" class="note">まだ対戦履歴はありません。</div></details>
-      <div class="controls"><button id="quit" class="btn small secondary">対戦から退出</button><span class="note">⚡上限7 ／ ♥初期3 ／ 秘密選択・同時公開</span></div>
+      <div class="controls"><button id="quit" class="btn small secondary">対戦から退出</button><span class="note">⚡上限10 ／ ♥初期3 ／ 秘密選択・同時公開</span></div>
     </main>
   </div>
   <div id="handoff" class="overlay hidden"><div class="panel">
