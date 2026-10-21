@@ -49,7 +49,7 @@ test("charge still generates one energy against non-attack moves", () => {
 test("special attacks do not interrupt charge despite causing damage", () => {
   for (const move of ["pierce", "volley", "crush", "final", "allin"]) {
     const g = R.createGame();
-    g.players[0].energy = 4;
+    g.players[0].energy = 5; // All In now requires five energy.
     const out = R.resolveTurn(g, move, "charge");
     assert.ok(out.history[0].damages[1] > 0, move + " should damage");
     assert.equal(out.players[1].energy, 2, move + " must not cancel +1 charge");
@@ -91,7 +91,7 @@ test("piercing and crushing bypass guard", () => {
   assert.equal(R.resolveTurn(withEnergy(4), "crush", "guard").players[1].hp, 1);
 });
 test("read stops special attacks, not basic attack", () => {
-  assert.equal(R.resolveTurn(withEnergy(4), "read", "allin").players[0].hp, 3);
+  assert.equal(R.resolveTurn(withEnergy(5), "read", "allin").players[0].hp, 3);
   assert.equal(R.resolveTurn(withEnergy(4), "read", "attack").players[0].hp, 2);
 });
 test("counter reflects ordinary attack and nonpiercing specials", () => {
@@ -113,9 +113,74 @@ test("seal versus seal cancels both with costs spent", () => {
   assert.equal(g.players[1].energy, 5);
 });
 test("allin blocked by guard, final still chips guard", () => {
-  assert.equal(R.resolveTurn(withEnergy(4), "allin", "guard").players[1].hp, 3);
+  assert.equal(R.resolveTurn(withEnergy(5), "allin", "guard").players[1].hp, 3);
   assert.equal(R.resolveTurn(withEnergy(4), "final", "guard").players[1].hp, 2);
 });
+test("All In costs five, requires four successful charges from the initial state", () => {
+  assert.equal(R.getMove("allin").cost, 5);
+  let g = game();
+  for (let t = 1; t <= 3; t++) {
+    assert.equal(R.validMove(g.players[0], "allin"), false,
+      "All In must not unlock after just " + (t - 1) + " charges");
+    g = R.resolveTurn(g, "charge", "guard");
+  }
+  assert.equal(g.players[0].energy, 4);
+  assert.equal(R.validMove(g.players[0], "allin"), false);
+  g = R.resolveTurn(g, "charge", "guard");
+  assert.equal(g.players[0].energy, 5);
+  assert.equal(R.validMove(g.players[0], "allin"), true);
+  const result = R.resolveTurn(g, "allin", "charge");
+  assert.equal(result.winner, 0);
+  assert.equal(result.players[1].hp, 0);
+  assert.equal(result.players[0].energy, 0);
+});
+
+test("All In is not faster than three basic attacks against an undefended player", () => {
+  const allin = ["charge", "charge", "charge", "charge", "allin"];
+  const basics = ["attack", "charge", "attack", "charge", "attack"];
+  for (const sequence of [allin, basics]) {
+    let g = game();
+    sequence.forEach((action, t) => {
+      g = R.resolveTurn(g, action, "guard"); // guard consumes neither HP nor energy
+      if (t < 4) assert.equal(g.winner, null, "no premature KO");
+    });
+    // Normal guard defends both, so this is only an action legality check.
+    assert.equal(g.winner, null);
+  }
+  // Opponent plays an otherwise harmless non-defensive move instead.
+  for (const sequence of [allin, basics]) {
+    let g = game();
+    for (const action of sequence) {
+      g = R.resolveTurn(g, action, "read");
+    }
+    assert.equal(g.winner, 0, "both baseline strategies win on turn five");
+  }
+});
+
+test("early basic attacks delay All In preparation by interrupting charges", () => {
+  let g = game();
+  const other = ["attack", "charge", "attack", "charge"];
+  for (const action of other) {
+    g = R.resolveTurn(g, "charge", action);
+  }
+  assert.equal(g.players[0].hp, 1);
+  assert.equal(g.players[0].energy, 3,
+    "only two charges succeeded and the initial energy is one");
+  assert.equal(R.validMove(g.players[0], "allin"), false);
+});
+
+test("All In remains one-use and loses against defensive counters", () => {
+  for (const [counter, hpAttacker] of [["guard",3],["read",3],["counter",2]]) {
+    const g = withEnergy(5);
+    const result = R.resolveTurn(g, "allin", counter);
+    assert.equal(result.players[1].hp, 3);
+    assert.equal(result.players[0].hp, hpAttacker);
+    assert.equal(result.players[0].energy, 0);
+    assert.ok(result.players[0].used.includes("allin"));
+    assert.equal(R.validMove(result.players[0], "allin"), false);
+  }
+});
+
 test("cards are permanently consumed even if failed", () => {
   let g = R.resolveTurn(withEnergy(7), "allin", "guard");
   assert.equal(R.validMove(g.players[0], "allin"), false);
