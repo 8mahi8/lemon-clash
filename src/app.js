@@ -34,9 +34,11 @@
     const detail = $("cardDetail");
     detail.replaceChildren();
     const title = document.createElement("strong");
-    title.textContent = "カードを選ぼう";
+    title.textContent = game && game.suddenDeath ? "⚡ SUDDEN DEATH" : "カードを選ぼう";
     const description = document.createElement("p");
-    description.textContent = "カードをタップすると持ち上がり、ここに能力が表示されます。";
+    description.textContent = game && game.suddenDeath ?
+      "攻撃 ＞ 崩し ＞ 防御 ＞ 攻撃。同じ手ならもう一度選び直し。" :
+      "カードをタップすると持ち上がり、ここに能力が表示されます。";
     detail.append(title, description);
     $("selectedDetail").textContent = "行動を選択してください";
   }
@@ -51,7 +53,7 @@
     $("opHp").textContent = "♥ " + foe.hp;
     $("opEn").textContent = "⚡ " + foe.energy + "/" + R.MAX_ENERGY;
     $("opMeter").classList.toggle("danger", foe.energy >= R.MAX_ENERGY);
-    $("opWarning").classList.toggle("hidden", foe.energy < R.MAX_ENERGY);
+    $("opWarning").classList.toggle("hidden", game.suddenDeath || foe.energy < R.MAX_ENERGY);
     $("myHp").textContent += "/" + R.START_HP;
     $("opHp").textContent += "/" + R.START_HP;
     $("myEn").textContent += "/" + R.MAX_ENERGY;
