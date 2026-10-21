@@ -187,7 +187,7 @@ async function client(browser) {
     assert.match(await host.page.locator("#roundResult h2").innerText(),/勝利/);
     assert.match(await guest.page.locator("#roundResult h2").innerText(),/敗北/);
     assert.equal((await guest.page.locator("#myHp").innerText()).includes("0/3"),true);
-    assert.equal((await host.page.locator("#myEn").innerText()).includes("0/7"),true);
+    assert.equal((await host.page.locator("#myEn").innerText()).includes("0/10"),true);
     // Host attacked on turns 1,3,5 and recharged on turns 2,4.
     // Existing guest can leave and rejoin the SAME room without taking another seat.
     await guest.page.locator("#quit").click();
