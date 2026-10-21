@@ -154,17 +154,17 @@
     setText("opName", "RIVAL · " + (2 - selfIndex) + "P");
     setText("myHp", "♥ " + self.hp + "/" + R.START_HP);
     setText("opHp", "♥ " + other.hp + "/" + R.START_HP);
-    setText("myEn", "⚡ " + self.energy + "/7");
-    setText("opEn", "⚡ " + other.energy + "/7");
+    setText("myEn", "⚡ " + self.energy + "/" + R.MAX_ENERGY);
+    setText("opEn", "⚡ " + other.energy + "/" + R.MAX_ENERGY);
     // Static, low-cost visual indicator. Never changes game logic or HP.
     $("myFighter").classList.toggle("critical", self.hp === 1 && game.winner === null);
     $("opFighter").classList.toggle("critical", other.hp === 1 && game.winner === null);
-    $("opMeter").classList.toggle("danger", other.energy === 7);
-    visible("opWarning", other.energy === 7 && game.winner === null);
+    $("opMeter").classList.toggle("danger", other.energy >= R.MAX_ENERGY);
+    visible("opWarning", other.energy >= R.MAX_ENERGY && game.winner === null);
     for (const [id, n] of [["myMeter", self.energy], ["opMeter", other.energy]]) {
       const meter = $(id);
       meter.replaceChildren();
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < R.MAX_ENERGY; i++) {
         const bar = document.createElement("i");
         if (i < n) bar.className = "on";
         meter.append(bar);
