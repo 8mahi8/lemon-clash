@@ -64,7 +64,7 @@
   function moveButton(id, player) {
     const move = R.getMove(id);
     const used = R.isCard(id) && player.used.includes(id);
-    const canPlay = R.validMove(player, id);
+    const canPlay = R.validMove(player, id, game.suddenDeath);
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "move cost" + move.cost + (preview === id ? " selected" : "");
@@ -108,10 +108,13 @@
     const basics = $("basics");
     const cards = $("cards");
     const cardScroll = cards.scrollLeft;
-    basics.replaceChildren(...BASIC_ORDER.map(id => moveButton(id, player)));
-    cards.replaceChildren(...R.CARDS.map(card => moveButton(card.id, player)));
+    basics.replaceChildren(...(game.suddenDeath ? Object.keys(R.SUDDEN) : BASIC_ORDER)
+      .map(id => moveButton(id, player)));
+    cards.replaceChildren(...(game.suddenDeath ? [] : R.CARDS.map(card => moveButton(card.id, player))));
     cards.scrollLeft = cardScroll;
-    $("confirm").disabled = !selected || !R.validMove(player, selected);
+    $("basicHeading").textContent = game.suddenDeath ? "SUDDEN DEATH · 最後の3択" : "基本アクション";
+    $("specialHeading").classList.toggle("hidden", !!game.suddenDeath);
+    $("confirm").disabled = !selected || !R.validMove(player, selected, game.suddenDeath);
     if (!selected) $("selectedDetail").textContent = "行動を選択してください";
   }
 
@@ -136,7 +139,7 @@
   function render() {
     if (!game) return;
     status();
-    $("msg").textContent = "TURN " + game.turn + " · PLAYER " + (acting + 1) + " の行動を選ぼう";
+    $("msg").textContent = (game.suddenDeath ? "SUDDEN DEATH" : "TURN " + game.turn) + " · PLAYER " + (acting + 1) + " の行動を選ぼう";
     $("pickArea").classList.toggle("hidden", inResults);
     $("roundResult").classList.toggle("hidden", !inResults);
     if (!inResults) renderMoves();
@@ -144,6 +147,7 @@
   }
 
   function botMove() {
+    if (game.suddenDeath) return Object.keys(R.SUDDEN)[Math.floor(Math.random() * 3)];
     const player = game.players[1];
     const enemy = game.players[0];
     const moves = R.availableMoves(player);
@@ -183,7 +187,7 @@
   }
 
   function commit() {
-    if (!game || inResults || !selected || !R.validMove(game.players[acting], selected)) return;
+    if (!game || inResults || !selected || !R.validMove(game.players[acting], selected, game.suddenDeath)) return;
     const move = selected;
     selected = null;
     preview = null;
@@ -239,8 +243,8 @@
     const button = document.createElement("button");
     button.className = "btn";
     if (game.winner === null) {
-      headline.textContent = "次の一手を読め。";
-      button.textContent = "次のターンへ";
+      headline.textContent = game.suddenDeath ? "SUDDEN DEATH！ 3択で決着！" : "次の一手を読め。";
+      button.textContent = game.suddenDeath ? "サドンデスの3択へ" : "次のターンへ";
       button.addEventListener("click", () => {
         inResults = false;
         acting = 0;
