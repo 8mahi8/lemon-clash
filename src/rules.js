@@ -11,14 +11,14 @@
     {"id":"pierce","name":"貫通攻撃","cost":2,"icon":"🗡️","type":"attack","description":"通常防御を貫通して1ダメージ。見切り・封印で防がれる"},
     {"id":"counter","name":"カウンター","cost":2,"icon":"🪞","type":"defense","description":"通常攻撃・連撃・オールイン・生命吸収・チャージ狩りのダメージを全反射。封印で無効"},
     {"id":"seal","name":"封印","cost":2,"icon":"🔒","type":"control","description":"終局宣告以外の特殊カードを無効化。成功するとエネルギー+1"},
-    {"id":"chargehunter","name":"チャージ狩り","cost":2,"icon":"🎯","type":"attack","description":"1ダメージ。チャージ相手には中断＋エネルギー-1。通常防御・見切り・封印で防がれる"},
-    {"id":"volley","name":"連撃","cost":3,"icon":"⚔️","type":"attack","description":"2ダメージ。通常防御・見切り・封印で防がれる"},
+    {"id":"chargehunter","name":"チャージ狩り","cost":2,"icon":"🎯","type":"attack","description":"1ダメージ。チャージ相手には中断＋エネルギー-1。通常防御・見切り・封印・カウンターで防がれる"},
+    {"id":"volley","name":"連撃","cost":3,"icon":"⚔️","type":"attack","description":"2ダメージ。通常防御・見切り・封印・カウンターで防がれる"},
     {"id":"crush","name":"粉砕","cost":3,"icon":"💥","type":"attack","description":"通常防御なら2ダメージ。それ以外は効果なし。見切り・封印で防がれる"},
     {"id":"lifedrain","name":"生命吸収","cost":3,"icon":"🩸","type":"attack","description":"1ダメージ。命中時、自分のHPを1回復。通常防御・見切り・封印・カウンターで防がれる"},
     {"id":"final","name":"終焉の一撃","cost":4,"icon":"☄️","type":"attack","description":"2ダメージ。通常防御でも1ダメージ。チャージ中断。見切り・封印で防がれる"},
     {"id":"armor","name":"装甲展開","cost":4,"icon":"🛡️","type":"defense","description":"永続シールド2を獲得。発動ターンからダメージを防ぐ。封印で無効化"},
-    {"id":"allin","name":"オールイン","cost":5,"icon":"🔥","type":"attack","description":"3ダメージ。通常防御・見切り・封印で防がれる"},
-    {"id":"judgment","name":"終局宣告","cost":10,"icon":"👑","type":"ultimate","description":"発動時に勝利。防御・見切り・封印・シールドを無視する"}
+    {"id":"allin","name":"オールイン","cost":5,"icon":"🔥","type":"attack","description":"3ダメージ。通常防御・見切り・封印・カウンターで防がれる"},
+    {"id":"judgment","name":"終局宣告","cost":10,"icon":"👑","type":"ultimate","description":"発動時に勝利。防御・見切り・封印・シールドを無視。同時使用ならサドンデス"}
   ]);
   const LOOKUP = Object.fromEntries(CARDS.map(function (card) { return [card.id, card]; }));
   // Sudden death is a separate zero-resource 3-way mind game.
@@ -31,8 +31,8 @@
   const SD_WIN = Object.freeze({ sd_attack: "sd_break", sd_guard: "sd_attack", sd_break: "sd_guard" });
   const BASIC = Object.freeze({
     charge: { id: "charge", name: "チャージ", cost: 0, icon: "⚡", description: "エネルギー+1。通常攻撃・エネルギー泥棒・チャージ狩り・終焉の一撃で中断される" },
-    attack: { id: "attack", name: "通常攻撃", cost: 1, icon: "⚔️", description: "1ダメージ。相手のチャージを中断。通常防御で防げる" },
-    guard: { id: "guard", name: "通常防御", cost: 0, icon: "🛡️", description: "通常攻撃・連撃・オールイン・生命吸収・チャージ狩りを防ぐ。貫通攻撃・粉砕は防げない" }
+    attack: { id: "attack", name: "通常攻撃", cost: 1, icon: "⚔️", description: "1ダメージ。チャージを中断。通常防御・カウンターで防がれる" },
+    guard: { id: "guard", name: "通常防御", cost: 0, icon: "🛡️", description: "通常攻撃・連撃・オールイン・生命吸収・チャージ狩りを防ぐ。貫通攻撃は1、粉砕は2、終焉の一撃は1ダメージ受ける" }
   });
 
   function createPlayer() {
