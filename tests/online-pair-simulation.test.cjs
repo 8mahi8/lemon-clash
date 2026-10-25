@@ -932,5 +932,20 @@ test("chat rejects overlong and blank messages before Firebase and leaves game a
   await a.click("chatSend");
   assert.match(a.el("chatStatus").textContent,/120文字以内/);
   assert.equal(db.get(root+"/chatMessages"),null);
+  // Existing messages are capped at 20 by each successful send.
+  db.put(root+"/chatMessages",Array.from({length:20},(_,i)=>({
+    seat:"host",text:"old-"+i,at:Date.now()-50000+i
+  })));
+  db.notify(root+"/chatMessages");
+  a.el("chatInput").value="最新";
+  await a.click("chatSend");
+  await waitUntil(()=>db.get(root+"/chatMessages")?.at(-1)?.text==="最新","latest message");
+  const messages=db.get(root+"/chatMessages");
+  assert.equal(messages.length,20);
+  assert.equal(messages[0].text,"old-1");
+  a.el("chatInput").value="連投";
+  await a.click("chatSend");
+  assert.equal(db.get(root+"/chatMessages").length,20);
+  assert.match(a.el("chatStatus").textContent,/少し間を空けて/);
   assert.deepEqual(db.failures,[]);
 });
