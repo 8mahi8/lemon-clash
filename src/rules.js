@@ -142,7 +142,8 @@
       if (amount > 0 && response === "charge") {
         if (id === "attack" || id === "final" || id === "chargehunter") {
           gain[target] = 0;
-          log.push("P" + (target + 1) + "のチャージが中断！");
+          log.push("P" + (target + 1) + "のチャージが" +
+            (id === "attack" ? "通常攻撃で中断！" : "中断！"));
         }
         if (id === "chargehunter") {
           energyLoss[target]++;
