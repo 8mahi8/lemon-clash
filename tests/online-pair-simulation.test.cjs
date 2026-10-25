@@ -93,6 +93,16 @@ class InMemoryRealtimeDatabase {
     }
     if(parts.length===2)return !room&&value?.hostUid===uid;
     if(!room)return false;
+    if(parts.length===3&&parts[2]==="chatMessages"){
+      if(uid!==room.hostUid&&uid!==room.guestUid)return false;
+      if(!Array.isArray(value)||value.length<1||value.length>20)return false;
+      const previous=Array.isArray(old)?old:[];
+      if(JSON.stringify(value.slice(0,-1))!==JSON.stringify(previous.slice(-19)))return false;
+      const newest=value[value.length-1],seat=uid===room.hostUid?"host":"guest";
+      return newest?.seat===seat&&typeof newest.text==="string"&&
+        newest.text.length>0&&newest.text.length<=120&&
+        Number.isFinite(newest.at);
+    }
     if(parts.length===4&&parts[2]==="rematch"){
       const seat=parts[3];
       const owner=seat==="host"?room.hostUid:room.guestUid;
@@ -862,5 +872,65 @@ test("three consecutive HP3 games can play and rematch in the same room",async()
       "rematch loop "+match);
     assert.equal(db.get("lemonClashRoomsV1/"+code+"/states/6"),null);
   }
+  assert.deepEqual(db.failures,[]);
+});
+
+test("room chat reaches both clients, persists across rejoin, and does not interrupt a selected card",async()=>{
+  const db=new InMemoryRealtimeDatabase();
+  const host=client(db,"chat-host"),guest=client(db,"chat-guest"),outsider=client(db,"chat-other");
+  await host.click("onlineHost");
+  await waitUntil(()=>/^[0-9]{6}$/.test(host.el("lobbyCode").textContent),"chat room code");
+  const code=host.el("lobbyCode").textContent;
+  assert.equal(host.visible("roomChat"),true,"room chat available in waiting lobby");
+  host.click("chatToggle");
+  host.el("chatInput").value="  入室したよ  ";
+  await host.click("chatSend");
+  await waitUntil(()=>db.get("lemonClashRoomsV1/"+code+"/chatMessages")?.length===1,"host sent");
+  assert.equal(db.get("lemonClashRoomsV1/"+code+"/chatMessages")[0].text,"入室したよ");
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>host.visible("battle")&&guest.visible("battle"),"chat battle joined");
+  guest.click("chatToggle");
+  await waitUntil(()=>guest.el("chatMessages").children.some(c=>c.children[1]?.textContent==="入室したよ"),
+    "guest receives host message");
+  guest.card("チャージ");
+  const selectedBefore=guest.el("selectedDetail").textContent;
+  guest.el("chatInput").value="<img src=x onerror=alert(1)>";
+  await guest.click("chatSend");
+  await waitUntil(()=>host.el("chatMessages").children.some(c=>c.children[1]?.textContent.includes("<img")),
+    "chat synchronizes across clients");
+  assert.equal(guest.el("selectedDetail").textContent,selectedBefore,"chat must not alter selected action");
+  const roomMessages=db.get("lemonClashRoomsV1/"+code+"/chatMessages");
+  assert.equal(roomMessages.length,2);
+  assert.equal(roomMessages[1].seat,"guest");
+  assert.equal(host.el("chatMessages").children[1].children[1].textContent,
+    "<img src=x onerror=alert(1)>","messages are text, never interpreted as HTML");
+  // Third-party clients cannot write directly into a full room.
+  const strangerUid=outsider.window.localStorage.getItem("lemon-clash-player-id-v1")||
+    "stranger-not-in-room";
+  assert.equal(db.permit(strangerUid,"lemonClashRoomsV1/"+code+"/chatMessages",true,
+    [...roomMessages,{seat:"guest",text:"侵入",at:Date.now()}],roomMessages),false);
+  await guest.click("quit");
+  assert.equal(guest.visible("roomChat"),false,"chat disappears when leaving");
+  guest.el("roomInput").value=code;
+  await guest.click("onlineJoin");
+  await waitUntil(()=>guest.visible("battle"),"guest rejoined");
+  guest.click("chatToggle");
+  await waitUntil(()=>guest.el("chatMessages").children.length===2,"chat persists after rejoin");
+  assert.deepEqual(db.failures,[]);
+});
+test("chat rejects overlong and blank messages before Firebase and leaves game actions untouched",async()=>{
+  const db=new InMemoryRealtimeDatabase(),a=client(db,"chat-limit-host");
+  await a.click("onlineHost");
+  await waitUntil(()=>/^[0-9]{6}$/.test(a.el("lobbyCode").textContent),"limit room");
+  const root="lemonClashRoomsV1/"+a.el("lobbyCode").textContent;
+  a.click("chatToggle");
+  a.el("chatInput").value=" ".repeat(8);
+  await a.click("chatSend");
+  assert.equal(db.get(root+"/chatMessages"),null);
+  a.el("chatInput").value="a".repeat(121);
+  await a.click("chatSend");
+  assert.match(a.el("chatStatus").textContent,/120文字以内/);
+  assert.equal(db.get(root+"/chatMessages"),null);
   assert.deepEqual(db.failures,[]);
 });
