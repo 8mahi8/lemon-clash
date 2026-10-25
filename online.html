@@ -87,6 +87,17 @@
     .actionLocked{opacity:.45;pointer-events:none}
     .waitStatus{padding:18px;text-align:center;background:#1d3035;color:var(--mint);border:1px solid var(--line);border-radius:15px;font-weight:800}
     @media(max-width:520px){#roomInput{width:100%}.choices{flex-direction:column;align-items:stretch}}
+    /* Room chat floats above gameplay without changing card layout or rules. */
+    .roomChat{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));right:12px;z-index:70;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+    #chatToggle{min-height:42px;padding:9px 14px;border-radius:999px;background:#263d39;border:1px solid #7da48a;color:#f3f7f5;font-size:13px;font-weight:800;line-height:1.3;box-shadow:0 3px 12px #0008;cursor:pointer}
+    .chatPanel{width:min(340px,calc(100vw - 24px));background:#17292c;border:1px solid #56746c;border-radius:15px;box-shadow:0 12px 38px #000a;display:flex;flex-direction:column;gap:8px;padding:12px}
+    .chatPanel h2{font-size:14px;margin:0}.chatMessages{height:180px;max-height:36vh;overflow-y:auto;overscroll-behavior:contain;background:#101e22;border:1px solid #31454b;border-radius:9px;padding:9px;display:flex;flex-direction:column;gap:7px}
+    .chatBubble{display:flex;flex-direction:column;gap:3px;align-self:flex-start;max-width:90%;padding:7px 9px;border-radius:9px;background:#33474a;overflow-wrap:anywhere;font-size:13px;white-space:pre-wrap}
+    .chatBubble.mine{align-self:flex-end;background:#355044}.chatBubble strong{font-size:10px;color:#bfd6d0}.chatHint{color:#a3bbb9;font-size:12px;margin:auto}
+    .chatCompose{display:flex;gap:6px}.chatCompose input{flex:1;min-width:0;padding:9px 10px;border-radius:9px;border:1px solid #547169;background:#24383b;color:#fff;font:inherit;font-size:14px}.chatCompose button{min-width:56px}
+    #chatStatus{font-size:11px;min-height:14px;color:#ffbfbd}
+    @media(max-height:570px) and (orientation:landscape){.chatMessages{height:85px;max-height:22vh}.chatPanel{padding:8px;gap:4px}}
+
   </style>
 </head>
 <body>
@@ -125,6 +136,20 @@
       <details class="log panel"><summary>対戦ログを見る</summary><div id="logList" class="note">まだ対戦履歴はありません。</div></details>
       <div class="controls"><button id="quit" class="btn small secondary">対戦から退出</button><span class="note">⚡上限10 ／ ♥初期3 ／ 秘密選択・同時公開</span></div>
     </main>
+    <aside id="roomChat" class="roomChat hidden" aria-label="ルームチャット">
+      <section id="chatPanel" class="chatPanel hidden" aria-label="チャット内容">
+        <h2>💬 ルームチャット</h2>
+        <div id="chatMessages" class="chatMessages" role="log" aria-live="polite" aria-label="メッセージ">
+          <p class="chatHint">まだメッセージはありません。</p>
+        </div>
+        <div class="chatCompose">
+          <input id="chatInput" type="text" maxlength="120" autocomplete="off" placeholder="120文字以内" aria-label="メッセージを入力">
+          <button id="chatSend" type="button" class="btn small">送信</button>
+        </div>
+        <div id="chatStatus" role="status" aria-live="polite"></div>
+      </section>
+      <button id="chatToggle" type="button" aria-controls="chatPanel" aria-expanded="false">💬 チャット</button>
+    </aside>
   </div>
   <div id="handoff" class="overlay hidden"><div class="panel">
     <div style="font-size:51px">🔐</div><h2 id="handoffTitle">相手に端末を渡してね</h2>

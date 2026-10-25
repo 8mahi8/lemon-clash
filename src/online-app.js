@@ -9,6 +9,7 @@
   const ROOM_ROOT = "lemonClashRoomsV1";
   const LIB = "https://www.gstatic.com/firebasejs/10.8.0/";
   const BASIC = ["charge", "attack", "guard"];
+  const CHAT_LIMIT = 20, CHAT_LENGTH = 120, CHAT_COOLDOWN_MS = 1500;
   let firebaseApp = null, auth = null, database = null, uid = null;
   let roomRef = null, roomCode = "", seat = null;
   let game = null, selected = null, preview = null;
@@ -19,6 +20,7 @@
   let pendingWrites = Object.create(null);
   // Result motion plays once per revealed turn, not on every Firebase snapshot.
   let lastResultFxKey = "";
+  let chatOpen = false, sendingChat = false, lastSentAt = 0, lastChatView = null;
 
   function setText(id, value) { $(id).textContent = value; }
   function visible(id, yes) { $(id).classList.toggle("hidden", !yes); }
@@ -27,6 +29,79 @@
     setText("lobbyStatus", message);
     setText("msg", message);
   }
+  function toggleChat() {
+    chatOpen = !chatOpen;
+    visible("chatPanel", chatOpen);
+    $("chatToggle").textContent = chatOpen ? "✕ 閉じる" : "💬 チャット";
+    $("chatToggle").setAttribute("aria-expanded", String(chatOpen));
+    if (chatOpen) $("chatMessages").scrollTop = $("chatMessages").scrollHeight;
+  }
+  function renderChat(messages) {
+    const rows = Array.isArray(messages) ? messages.slice(-CHAT_LIMIT) : [];
+    const signature = seat + ":" + JSON.stringify(rows);
+    if (signature === lastChatView) return;
+    lastChatView = signature;
+    const area = $("chatMessages");
+    area.replaceChildren();
+    if (!rows.length) {
+      const hint = document.createElement("p");
+      hint.className = "chatHint";
+      hint.textContent = "まだメッセージはありません。";
+      area.append(hint);
+    }
+    for (const entry of rows) {
+      if (!entry || (entry.seat !== "host" && entry.seat !== "guest") ||
+          typeof entry.text !== "string") continue;
+      const bubble = document.createElement("div");
+      bubble.className = "chatBubble " + (entry.seat === seat ? "mine" : "theirs");
+      const sender = document.createElement("strong");
+      sender.textContent = entry.seat === seat ? "自分" : "相手";
+      const message = document.createElement("span");
+      message.textContent = entry.text.slice(0, CHAT_LENGTH);
+      bubble.append(sender, message);
+      area.append(bubble);
+    }
+    if (chatOpen) area.scrollTop = area.scrollHeight;
+  }
+  async function sendChat() {
+    if (sendingChat || !roomRef || !seat || !roomData ||
+        (roomData.hostUid !== uid && roomData.guestUid !== uid)) return;
+    const input = $("chatInput");
+    const value = input.value.replace(/[\r\n\t]+/g, " ").trim();
+    if (!value) { setText("chatStatus", "メッセージを入力してね"); return; }
+    if (value.length > CHAT_LENGTH) {
+      setText("chatStatus", "120文字以内で入力してね"); return;
+    }
+    const timestamp = Date.now();
+    if (timestamp - lastSentAt < CHAT_COOLDOWN_MS) {
+      setText("chatStatus", "少し間を空けて送信してね"); return;
+    }
+    const activeRef = roomRef, epoch = sessionEpoch, sendingSeat = seat;
+    sendingChat = true;
+    $("chatSend").disabled = true;
+    setText("chatStatus", "送信中…");
+    try {
+      const sent = await transaction(activeRef.child("chatMessages"), previous => {
+        const list = Array.isArray(previous) ? previous.slice(-CHAT_LIMIT) : [];
+        return [...list, { seat: sendingSeat, text: value, at: timestamp }]
+          .slice(-CHAT_LIMIT);
+      });
+      if (epoch !== sessionEpoch || activeRef !== roomRef) return;
+      if (!sent) throw new Error("書き込みを確定できませんでした");
+      input.value = "";
+      lastSentAt = timestamp;
+      setText("chatStatus", "");
+    } catch (e) {
+      if (epoch === sessionEpoch && activeRef === roomRef)
+        setText("chatStatus", "送信できません: " + (e.message || String(e)));
+    } finally {
+      if (epoch === sessionEpoch && activeRef === roomRef) {
+        sendingChat = false;
+        $("chatSend").disabled = false;
+      }
+    }
+  }
+
   function safeStorageKey(turn) {
     return "lemon-clash-secret-v1:" + roomCode + ":" + uid + ":" + turn;
   }
@@ -344,6 +419,7 @@
     visible("home", false);
     visible("onlineLobby", false);
     visible("battle", true);
+    visible("roomChat", true);
     displayStatus();
     drawLog();
     if (game.winner !== null || showRound) {
@@ -381,6 +457,7 @@
     visible("home", false);
     visible("battle", false);
     visible("onlineLobby", true);
+    visible("roomChat", true);
     setText("lobbyCode", roomCode);
     setText("lobbyStatus", "友達の参加を待っています（ルーム " + roomCode + "）");
   }
@@ -440,7 +517,18 @@
     if (room.hostUid !== uid && room.guestUid !== uid) {
       throw new Error("このルームの参加権限がありません");
     }
+    // Chat-only snapshots must not rebuild the hand or lose its scroll position.
+    // They carry no new turn, commitment or rematch data.
+    const chatOnly = !!roomData &&
+      !sameStructuredValue(room.chatMessages, roomData.chatMessages) &&
+      room.hostUid === roomData.hostUid &&
+      room.guestUid === roomData.guestUid &&
+      sameStructuredValue(room.states, roomData.states) &&
+      sameStructuredValue(room.rounds, roomData.rounds) &&
+      sameStructuredValue(room.rematch, roomData.rematch);
     roomData = room;
+    renderChat(room.chatMessages);
+    if (chatOnly) return;
     // Gemini school release: both players can opt into another game with
     // their existing 6-digit room. Only the host applies the reset.
     if (room.rematch && room.rematch.host && room.rematch.guest) {
@@ -580,6 +668,14 @@
     roomData = null; game = null; selected = null; preview = null;
     viewedTurn = 0; showRound = false; busy = false; queued = null; hasQueued = false;
     lastResultFxKey = "";
+    chatOpen = false; sendingChat = false; lastSentAt = 0; lastChatView = null;
+    $("chatInput").value = "";
+    $("chatSend").disabled = false;
+    setText("chatStatus", "");
+    visible("chatPanel", false);
+    visible("roomChat", false);
+    $("chatToggle").textContent = "💬 チャット";
+    $("chatToggle").setAttribute("aria-expanded", "false");
     pendingWrites = Object.create(null);
     visible("home", true);
     visible("onlineLobby", false);
@@ -742,6 +838,15 @@
       }
     }
   }
+  $("chatToggle").addEventListener("click", toggleChat);
+  $("chatSend").addEventListener("click", sendChat);
+  $("chatInput").addEventListener("keydown", event => {
+    // IME Enter confirms Japanese conversion; it must not send the message.
+    if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229) {
+      event.preventDefault();
+      sendChat();
+    }
+  });
   $("onlineHost").addEventListener("click", makeRoom);
   $("onlineJoin").addEventListener("click", joinRoom);
   $("roomInput").addEventListener("keydown", event => {
