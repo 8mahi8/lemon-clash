@@ -519,7 +519,9 @@
     }
     // Chat-only snapshots must not rebuild the hand or lose its scroll position.
     // They carry no new turn, commitment or rematch data.
-    const chatOnly = !!roomData && room.hostUid === roomData.hostUid &&
+    const chatOnly = !!roomData &&
+      !sameStructuredValue(room.chatMessages, roomData.chatMessages) &&
+      room.hostUid === roomData.hostUid &&
       room.guestUid === roomData.guestUid &&
       sameStructuredValue(room.states, roomData.states) &&
       sameStructuredValue(room.rounds, roomData.rounds) &&
