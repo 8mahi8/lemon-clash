@@ -670,6 +670,7 @@
     lastResultFxKey = "";
     chatOpen = false; sendingChat = false; lastSentAt = 0; lastChatView = null;
     $("chatInput").value = "";
+    $("chatSend").disabled = false;
     setText("chatStatus", "");
     visible("chatPanel", false);
     visible("roomChat", false);
