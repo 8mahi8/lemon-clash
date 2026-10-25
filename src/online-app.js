@@ -282,7 +282,8 @@
       desc.textContent = move.description + (R.isCard(id) ? "（使い切り）" : "");
       $("cardDetail").replaceChildren(title, desc);
       setText("selectedDetail", valid ? "確定すると取り消せません。" :
-        "必要なエネルギーが足りません（⚡" + move.cost + "）");
+        (id === "burn" && player.hp === 1 ? "HP1では生命燃焼を使えません" :
+          "必要なエネルギーが足りません（⚡" + move.cost + "）"));
       drawHand();
     });
     return button;
