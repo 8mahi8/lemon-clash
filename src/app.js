@@ -95,7 +95,10 @@
         selected = null;
       } else selected = id;
       renderMoves();
-      $("selectedDetail").textContent = move.name + "： " + move.description;
+      $("selectedDetail").textContent = !canPlay ?
+        (id === "burn" && player.hp === 1 ? "HP1では生命燃焼を使えません" :
+          "エネルギー不足（必要 ⚡" + move.cost + "）") :
+        "確定すると取り消せません。";
       $("cardDetail").replaceChildren();
       const title = document.createElement("strong"); title.textContent = move.icon + " " + move.name + " · ⚡" + move.cost;
       const detail = document.createElement("p"); detail.textContent = move.description + (R.isCard(id) ? "（使い切り）" : "（何度でも使用可能）");
