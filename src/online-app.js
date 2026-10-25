@@ -67,7 +67,7 @@
     if (sendingChat || !roomRef || !seat || !roomData ||
         (roomData.hostUid !== uid && roomData.guestUid !== uid)) return;
     const input = $("chatInput");
-    const value = input.value.replace(/[\\r\\n\\t]+/g, " ").trim();
+    const value = input.value.replace(/[\r\n\t]+/g, " ").trim();
     if (!value) { setText("chatStatus", "メッセージを入力してね"); return; }
     if (value.length > CHAT_LENGTH) {
       setText("chatStatus", "120文字以内で入力してね"); return;
