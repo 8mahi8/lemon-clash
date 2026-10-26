@@ -1,0 +1,1341 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <link rel="icon" href="data:,">
+  <meta name="theme-color" content="#111b20">
+  <title>LEMON CLASH ONLINE | 同時読み合いカードバトル</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0d1518;--panel:#172329;--panel2:#1e2f35;--line:#31454b;--text:#f3f7f5;--muted:#a3bbb9;--lime:#def677;--mint:#92e2c2;--pink:#ffa6b1;--gold:#f9cd81;--blue:#a6cafe}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:500 16px/1.5 -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif}
+    body{background:radial-gradient(ellipse at 50% -20%,#355239 0,transparent 43%),var(--bg)}
+    button{font:inherit;cursor:pointer}button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
+    .app{max-width:1000px;margin:0 auto;padding:18px 20px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+    .brand{font-size:21px;font-weight:900;letter-spacing:.06em}.brand b{color:var(--lime)}.pill{padding:6px 10px;border-radius:100px;border:1px solid var(--line);color:var(--muted);font-size:12px;font-weight:750}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:21px;padding:20px;box-shadow:0 12px 34px #0002}
+    .hero{text-align:center;padding:48px 20px;background:linear-gradient(140deg,#223b33,#15252b);border-radius:20px;border:1px solid #456050}
+    .hero .fruit{font-size:60px;line-height:1.1}.hero h1{font-size:clamp(29px,5vw,51px);line-height:1.1;margin:15px 0 13px;letter-spacing:.04em}.hero p{color:var(--muted);max-width:570px;margin:0 auto 23px}
+    .choices{display:flex;justify-content:center;flex-wrap:wrap;gap:12px}.btn{background:var(--lime);color:#192220;border:0;border-radius:13px;padding:13px 23px;font-weight:900;min-height:47px}
+    .btn.secondary{background:#31464c;color:#f2fbf4}.btn:disabled{opacity:.38;cursor:not-allowed}.btn.small{font-size:13px;padding:9px 13px;min-height:auto}
+    .note{color:var(--muted);font-size:13px;line-height:1.7}.intro{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+    .intro>div{background:var(--panel);border:1px solid var(--line);padding:15px;border-radius:13px}.intro strong{display:block;color:var(--lime)}
+    .scoreboard{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}.fighter{padding:15px;background:var(--panel);border:1px solid var(--line);border-radius:15px}
+    .fighter.opponent{border-color:#805860}.fighter.me{border-color:#547668}.fighter .name{font-weight:800;color:var(--muted);font-size:12px}.fighter .numbers{display:flex;flex-wrap:wrap;gap:13px;font-weight:900;font-size:19px}.fighter .numbers .hp{color:var(--pink)}.fighter .numbers .energy{color:var(--gold)}
+    .vs{font-weight:950;font-size:21px;color:var(--lime);text-align:center}.message{margin:15px 0;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:#26343a;color:var(--mint);font-weight:750}
+    .sectionHead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:20px 0 9px}.sectionHead h2{margin:0;font-size:16px}.sectionHead span{color:var(--muted);font-size:12px}
+    .actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.cards{display:flex;align-items:flex-end;justify-content:flex-start;overflow-x:auto;overflow-y:hidden;gap:0;padding:28px 10px 8px;min-height:190px;scrollbar-width:thin;scroll-snap-type:x proximity}.cards .move{flex:0 0 clamp(76px,10.5vw,112px);width:clamp(76px,10.5vw,112px);height:146px;min-height:0;aspect-ratio:2/3;margin-left:-14px;padding:9px 7px;transform-origin:bottom center;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;scroll-snap-align:center;box-shadow:0 5px 12px #0005}.cards .move:first-child{margin-left:auto}.cards .move:last-child{margin-right:auto}.cards .move.selected{transform:translateY(-17px);z-index:5;box-shadow:0 0 18px #def67766}.cards .move .symbol{font-size:32px;text-align:center;margin:auto 0}.cards .move .movename{text-align:center;font-size:11px}.cards .move .effect{display:none}.cards .move:disabled{opacity:.58;filter:grayscale(.65)}.cards .move .cost{font-size:12px}.cards .move:focus-visible{outline:3px solid var(--lime);outline-offset:-3px}@media(prefers-reduced-motion:reduce){.cards .move{transition:none}}.energyMeter{display:flex;gap:3px;margin-top:6px}.energyMeter i{height:6px;flex:1;background:#3b5052;border-radius:3px}.energyMeter i.on{background:var(--gold)}.cardDetail{min-height:62px;border:1px solid #49645d;border-radius:12px;background:#1c3032;padding:10px 14px;margin-top:10px}.cardDetail strong{color:var(--lime)}.cardDetail p{margin:3px 0 0;font-size:12px;color:var(--muted)}.fighter .numbers{font-size:clamp(18px,2.6vw,27px)}.fighter .numbers .hp,.fighter .numbers .energy{white-space:nowrap}.fighter{min-width:0}.energyMeter.danger i.on{background:#ff707b;box-shadow:0 0 8px #ff707b77}.energyWarning{color:#ffafb7;font-size:11px;font-weight:850;margin-top:6px}
+    .move{position:relative;text-align:left;border:1px solid var(--line);border-radius:14px;padding:13px;min-height:118px;background:#26363c;color:var(--text);display:flex;flex-direction:column;gap:4px;transition:transform .08s,border-color .1s}
+    .move:not(:disabled):active{transform:scale(.98)}.move:disabled{opacity:.32;cursor:not-allowed}.move.selected{outline:2px solid var(--lime);border-color:var(--lime)}
+    .move .symbol{font-size:27px;line-height:1.4}.move .movename{font-weight:900;font-size:13px}.move .effect{font-size:11px;color:var(--muted)}.move .cost{position:absolute;top:9px;right:10px;font-size:11px;font-weight:900;border-radius:20px;background:#101b20;padding:3px 7px;color:var(--gold)}
+    .move.cost1{background:linear-gradient(150deg,#223d56,#24343e)}.move.cost2{background:linear-gradient(150deg,#264238,#22373a)}.move.cost3{background:linear-gradient(150deg,#4e402e,#2e3434)}.move.cost10{background:linear-gradient(150deg,#8d6c2a,#42351d);border-color:#e8ca76;color:#fff1c4}.move.cost4,.move.cost5{background:linear-gradient(150deg,#512d39,#33333b)}
+    .controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:17px}.controls .btn{min-width:190px}.log{margin-top:12px;padding:10px 14px}.log summary{cursor:pointer;font-weight:850;list-style-position:inside}.log[open] #logList{margin-top:8px}
+    .logrow{border-top:1px solid var(--line);padding:9px 1px;font-size:12px;color:var(--muted)}.logrow strong{color:var(--text)}
+    /* Phase 3: readable, silent simultaneous-reveal presentation; no gameplay changes. */
+    .result{text-align:center;padding:22px;border:1px solid var(--line);background:linear-gradient(155deg,#20373a,#15252b);border-radius:20px;margin-top:15px}
+    .result h2{font-size:clamp(23px,3.6vw,33px);margin:0 0 9px;color:var(--lime);letter-spacing:.035em}
+    .result p{color:var(--muted)}
+    .result-win{border-color:#86c58d;background:linear-gradient(155deg,#284a39,#182f2f)}
+    .result-win h2{color:#deff9a;text-shadow:0 0 16px #a8e66b66}
+    .result-lose{border-color:#83545c;background:linear-gradient(155deg,#3b3035,#20262d)}
+    .result-lose h2{color:#ffb4bf}
+    .result-draw{border-color:#af9766}.result-draw h2{color:#f9cd81}
+    .result-enter{animation:result-enter .25s ease-out both}
+    @keyframes result-enter{from{opacity:.35;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+    .turnReveal{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px auto 0;max-width:650px}
+    .revealPiece{min-width:0;background:#25393e;border:1px solid #3b5559;border-radius:15px;padding:12px 10px;text-align:center}
+    .revealPiece.reveal-me{background:#243b37;border-color:#547668}
+    .revealPiece.reveal-op{background:#3b3035;border-color:#805860}
+    .revealPiece .big{display:block;font-size:clamp(27px,4.5vw,38px);line-height:1.25;margin:3px 0}
+    .revealPiece b{display:block;font-size:clamp(12px,2vw,16px);overflow-wrap:anywhere}
+    .revealPiece small{display:block;color:#c0d0ce;font-size:11px}
+    .revealOwner{font-weight:850;letter-spacing:.05em}
+    .resultInfo{font-size:12px;line-height:1.7;margin:12px auto 16px;max-width:650px}
+    .result .btn{margin:2px 5px 4px;max-width:100%}
+    .fighter.critical{border-color:#cc7881;background:#322a32}
+    .fighter.critical .hp{color:#ffc4cf;text-shadow:0 0 10px #fa72777a}
+    #confirm:not(:disabled){box-shadow:0 0 0 2px #def67733,0 8px 17px #def67721}
+    @media(max-height:570px) and (orientation:landscape){
+      .result{padding:11px;margin-top:8px}.result h2{font-size:22px;margin-bottom:3px}
+      .turnReveal{gap:7px;margin-top:7px}.revealPiece{padding:6px 9px}
+      .revealPiece .big{font-size:25px;margin:0}.resultInfo{margin:7px auto 10px}
+    }
+    @media(prefers-reduced-motion:reduce){.result-enter{animation:none}}
+    .overlay{position:fixed;inset:0;z-index:99;background:#0d1719;display:flex;align-items:center;justify-content:center;padding:18px}.overlay .panel{max-width:510px;text-align:center;padding:37px}
+    .overlay h2{font-size:30px}.overlay p{color:var(--muted)}.hidden{display:none!important}
+    @media(max-width:720px){.app{padding:12px 10px 28px}.panel{padding:13px}.cards{justify-content:flex-start;padding-top:30px}.cards .move{flex-basis:82px;width:82px;margin-left:-12px}.actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.move{padding:10px;min-height:115px}.move .movename{font-size:12px}.move .effect{font-size:10px}.scoreboard{gap:5px}.fighter{padding:9px}.fighter .numbers{font-size:16px;gap:6px}.vs{font-size:15px}.intro{grid-template-columns:1fr}.hero{padding:35px 12px}}
+    @media(min-width:721px) and (max-height:900px){
+      .app{padding-top:10px;padding-bottom:18px}.top{margin-bottom:9px}
+      .fighter{padding:10px 13px}.message{margin:8px 0;padding:7px 12px}
+      .sectionHead{margin:9px 0 5px}.actions .move{min-height:83px;padding:8px 11px}
+      .actions .move .symbol{font-size:22px}.actions .move .effect{font-size:11px}
+      .cards{min-height:168px;padding-top:23px}.cards .move{height:131px}
+      .controls{margin-top:9px}.cardDetail{min-height:58px;padding:7px 12px}
+    }
+    @media(max-height:570px) and (orientation:landscape){
+      .app{padding-bottom:8px}.top{margin-bottom:5px}.sectionHead{margin:7px 0 4px}
+      .cards{min-height:148px}.cards .move{height:118px}.message{font-size:13px}
+    }
+    #roomInput{width:160px;max-width:100%;min-height:47px;background:#26383b;color:#f4f8f5;border:1px solid var(--line);border-radius:13px;padding:10px 14px;font:inherit;font-weight:850;font-variant-numeric:tabular-nums;text-align:center;letter-spacing:.1em}
+    #onlineError{min-height:24px;margin:12px auto 0;max-width:650px;color:#d6e3de}
+    .lobbyCode{color:var(--lime);font-variant-numeric:tabular-nums;letter-spacing:.18em}
+    #onlineLobby{margin-bottom:14px}
+    #onlineLobby p{color:var(--muted)}
+    #onlineLobby h2{margin:0 0 7px}
+    #onlineLobbyExit{margin-top:9px}
+    .cards .move.unaffordable{opacity:.7}
+    .actionLocked{opacity:.45;pointer-events:none}
+    .waitStatus{padding:18px;text-align:center;background:#1d3035;color:var(--mint);border:1px solid var(--line);border-radius:15px;font-weight:800}
+    @media(max-width:520px){#roomInput{width:100%}.choices{flex-direction:column;align-items:stretch}}
+    /* Room chat remains in document flow so it never blocks battle controls. */
+    .roomChat{display:flex;flex-direction:column;align-items:flex-end;gap:8px;width:100%;margin:-6px 0 12px;position:static}
+    #chatToggle{min-height:42px;padding:9px 14px;border-radius:999px;background:#263d39;border:1px solid #7da48a;color:#f3f7f5;font-size:13px;font-weight:800;line-height:1.3;box-shadow:0 3px 12px #0008;cursor:pointer}
+    .chatPanel{width:min(340px,100%);background:#17292c;border:1px solid #56746c;border-radius:15px;box-shadow:0 12px 38px #000a;display:flex;flex-direction:column;gap:8px;padding:12px}
+    .chatPanel h2{font-size:14px;margin:0}.chatMessages{height:180px;max-height:36vh;overflow-y:auto;overscroll-behavior:contain;background:#101e22;border:1px solid #31454b;border-radius:9px;padding:9px;display:flex;flex-direction:column;gap:7px}
+    .chatBubble{display:flex;flex-direction:column;gap:3px;align-self:flex-start;max-width:90%;padding:7px 9px;border-radius:9px;background:#33474a;overflow-wrap:anywhere;font-size:13px;white-space:pre-wrap}
+    .chatBubble.mine{align-self:flex-end;background:#355044}.chatBubble strong{font-size:10px;color:#bfd6d0}.chatHint{color:#a3bbb9;font-size:12px;margin:auto}
+    .chatCompose{display:flex;gap:6px}.chatCompose input{flex:1;min-width:0;padding:9px 10px;border-radius:9px;border:1px solid #547169;background:#24383b;color:#fff;font:inherit;font-size:14px}.chatCompose button{min-width:56px}
+    #chatStatus{font-size:11px;min-height:14px;color:#ffbfbd}
+    @media(max-height:570px) and (orientation:landscape){.chatMessages{height:85px;max-height:22vh}.chatPanel{padding:8px;gap:4px}}
+
+  </style>
+</head>
+<body>
+  <div id="app" class="app" aria-live="polite">
+    <header class="top"><div class="brand">🍋 LEMON <b>CLASH</b></div><span class="pill">友達とオンライン対戦 · 1vs1</span></header>
+    <aside id="roomChat" class="roomChat hidden" aria-label="ルームチャット">
+      <button id="chatToggle" type="button" aria-controls="chatPanel" aria-expanded="false">💬 チャット</button>
+      <section id="chatPanel" class="chatPanel hidden" aria-label="チャット内容">
+        <h2>💬 ルームチャット</h2>
+        <div id="chatMessages" class="chatMessages" role="log" aria-live="polite" aria-label="メッセージ">
+          <p class="chatHint">まだメッセージはありません。</p>
+        </div>
+        <div class="chatCompose">
+          <input id="chatInput" type="text" maxlength="120" autocomplete="off" placeholder="120文字以内" aria-label="メッセージを入力">
+          <button id="chatSend" type="button" class="btn small">送信</button>
+        </div>
+        <div id="chatStatus" role="status" aria-live="polite"></div>
+      </section>
+    </aside>
+    <div id="home">
+      <section class="hero">
+        <div class="fruit">🍋⚔️</div><h1>読んで、溜めて、<br>切り札を撃て。</h1>
+        <p>CCレモン風の同時読み合い × 使い切りカード15枚。攻撃もカードもエネルギーを消費する。相手の一手を読み切ろう。</p>
+        <div class="choices"><button class="btn" id="onlineHost">6桁の部屋を作る</button><input id="roomInput" type="text" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="6桁の部屋コード" aria-label="参加する部屋コード"><button class="btn secondary" id="onlineJoin">部屋に参加</button></div>
+        <p id="onlineError" class="note" role="status" aria-live="polite">「部屋を作る」で6桁の番号を発行。友達は番号を入力して参加してね。</p>
+      </section>
+      <div class="intro"><div><strong>⚡ チャージ</strong>エネルギーを1獲得</div><div><strong>⚔️ 攻撃</strong>エネルギー1で1ダメージ</div><div><strong>🛡️ 防御</strong>攻撃を防ぐ。チャージには隙ができる</div></div>
+      <p class="note">通信はBRAWL・小国戦線と共通のFirebaseを使用。ルーム番号だけで友達と1vs1対戦できます。</p>
+    </div>
+    <div id="onlineLobby" class="panel hidden" role="status" aria-live="polite">
+      <h2>対戦ルーム <span id="lobbyCode" class="lobbyCode"></span></h2>
+      <p id="lobbyStatus">接続待機中…</p>
+      <p class="note">友達には6桁の部屋番号だけ伝えてね。別々の端末で開いて参加します。</p>
+      <button id="onlineLobbyExit" class="btn secondary small">タイトルに戻る</button>
+    </div>
+    <main id="battle" class="hidden">
+      <div class="scoreboard">
+        <div class="fighter me" id="myFighter"><div class="name" id="myName">PLAYER 1</div><div class="numbers"><span class="hp" id="myHp"></span><span class="energy" id="myEn"></span></div><div class="energyMeter" id="myMeter"></div></div>
+        <div class="vs">VS</div>
+        <div class="fighter opponent" id="opFighter"><div class="name" id="opName">PLAYER 2</div><div class="numbers"><span class="hp" id="opHp"></span><span class="energy" id="opEn"></span></div><div class="energyMeter" id="opMeter"></div><div class="energyWarning hidden" id="opWarning">⚠ 終局宣告 発動可能</div></div>
+      </div>
+      <div class="message" id="msg"></div>
+      <div id="pickArea">
+        <div class="sectionHead"><h2 id="basicHeading">基本アクション</h2><span>何度でも使用可能</span></div><div class="actions" id="basics"></div>
+        <div class="sectionHead" id="specialHeading"><h2>特殊カード</h2><span>各カード1回限り</span></div><div class="cardDetail" id="cardDetail"><strong>カードを選ぼう</strong><p>カードをタップすると持ち上がり、ここに能力が表示されます。</p></div><div class="cards" id="cards" aria-label="特殊カードの手札"></div>
+        <div class="controls"><div class="note" id="selectedDetail">行動を選択してください</div><button class="btn" id="confirm" disabled>秘密で行動を確定</button></div>
+      </div>
+      <div id="onlineWait" class="waitStatus hidden" role="status" aria-live="polite">相手の選択を待っています…</div>
+      <div id="roundResult" class="hidden"></div>
+      <details class="log panel"><summary>対戦ログを見る</summary><div id="logList" class="note">まだ対戦履歴はありません。</div></details>
+      <div class="controls"><button id="quit" class="btn small secondary">対戦から退出</button><span class="note">⚡上限10 ／ ♥初期3 ／ 秘密選択・同時公開</span></div>
+    </main>
+
+  </div>
+  <div id="handoff" class="overlay hidden"><div class="panel">
+    <div style="font-size:51px">🔐</div><h2 id="handoffTitle">相手に端末を渡してね</h2>
+    <p id="handoffBody">行動は確定済み。次のプレイヤーには秘密だよ。</p>
+    <button class="btn" id="handoffProceed">PLAYER 2 の選択へ</button>
+  </div></div>
+  <script>
+/* LEMON CLASH rules v0.1 — deterministic, dependency-free */
+(function (root) {
+  "use strict";
+  const MAX_ENERGY = 10;
+  const START_HP = 3;
+  const CARDS = Object.freeze([
+    {"id":"feint","name":"フェイント","cost":1,"icon":"🎭","type":"utility","description":"相手が通常防御ならエネルギー+3。封印で防がれる"},
+    {"id":"drain","name":"エネルギー泥棒","cost":1,"icon":"🌀","type":"utility","description":"相手のチャージを中断し、自分のエネルギー+2。封印で防がれる"},
+    {"id":"read","name":"見切り","cost":1,"icon":"👁️","type":"defense","description":"特殊攻撃のダメージを防ぐ。封印で無効化される"},
+    {"id":"burn","name":"生命燃焼","cost":1,"icon":"🔥","type":"utility","description":"自分のHPを1消費し、エネルギー+3。HP1では使用不可。封印で防がれる"},
+    {"id":"pierce","name":"貫通攻撃","cost":2,"icon":"🗡️","type":"attack","description":"通常防御を貫通して1ダメージ。見切り・封印で防がれる"},
+    {"id":"counter","name":"カウンター","cost":2,"icon":"🪞","type":"defense","description":"通常攻撃・連撃・オールイン・生命吸収・チャージ狩りのダメージを全反射。封印で無効"},
+    {"id":"seal","name":"封印","cost":2,"icon":"🔒","type":"control","description":"終局宣告以外の特殊カードを無効化。成功するとエネルギー+1"},
+    {"id":"chargehunter","name":"チャージ狩り","cost":2,"icon":"🎯","type":"attack","description":"1ダメージ。チャージ相手には中断＋エネルギー-1。通常防御・見切り・封印・カウンターで防がれる"},
+    {"id":"volley","name":"連撃","cost":3,"icon":"⚔️","type":"attack","description":"2ダメージ。通常防御・見切り・封印・カウンターで防がれる"},
+    {"id":"crush","name":"粉砕","cost":3,"icon":"💥","type":"attack","description":"通常防御なら2ダメージ。それ以外は効果なし。見切り・封印で防がれる"},
+    {"id":"lifedrain","name":"生命吸収","cost":3,"icon":"🩸","type":"attack","description":"1ダメージ。命中時、自分のHPを1回復。通常防御・見切り・封印・カウンターで防がれる"},
+    {"id":"final","name":"終焉の一撃","cost":4,"icon":"☄️","type":"attack","description":"2ダメージ。通常防御でも1ダメージ。チャージ中断。見切り・封印で防がれる"},
+    {"id":"armor","name":"装甲展開","cost":4,"icon":"🛡️","type":"defense","description":"永続シールド2を獲得。発動ターンからダメージを防ぐ。封印で無効化"},
+    {"id":"allin","name":"オールイン","cost":5,"icon":"🔥","type":"attack","description":"3ダメージ。通常防御・見切り・封印・カウンターで防がれる"},
+    {"id":"judgment","name":"終局宣告","cost":10,"icon":"👑","type":"ultimate","description":"発動時に勝利。防御・見切り・封印・シールドを無視。同時使用ならサドンデス"}
+  ]);
+  const LOOKUP = Object.fromEntries(CARDS.map(function (card) { return [card.id, card]; }));
+  // Sudden death is a separate zero-resource 3-way mind game.
+  // Attack beats Break, Break beats Guard, Guard beats Attack.
+  const SUDDEN = Object.freeze({
+    sd_attack: { id: "sd_attack", name: "攻撃", cost: 0, icon: "⚔️", description: "崩しに勝つ。防御に負ける" },
+    sd_guard: { id: "sd_guard", name: "防御", cost: 0, icon: "🛡️", description: "攻撃に勝つ。崩しに負ける" },
+    sd_break: { id: "sd_break", name: "崩し", cost: 0, icon: "💥", description: "防御に勝つ。攻撃に負ける" }
+  });
+  const SD_WIN = Object.freeze({ sd_attack: "sd_break", sd_guard: "sd_attack", sd_break: "sd_guard" });
+  const BASIC = Object.freeze({
+    charge: { id: "charge", name: "チャージ", cost: 0, icon: "⚡", description: "エネルギー+1。通常攻撃・エネルギー泥棒・チャージ狩り・終焉の一撃で中断される" },
+    attack: { id: "attack", name: "通常攻撃", cost: 1, icon: "⚔️", description: "1ダメージ。チャージを中断。通常防御・カウンターで防がれる" },
+    guard: { id: "guard", name: "通常防御", cost: 0, icon: "🛡️", description: "通常攻撃・連撃・オールイン・生命吸収・チャージ狩りを防ぐ。貫通攻撃は1、粉砕は2、終焉の一撃は1ダメージ受ける" }
+  });
+
+  function createPlayer() {
+    return { hp: START_HP, shield: 0, energy: 1, used: [] };
+  }
+  function createGame() {
+    return { turn: 1, players: [createPlayer(), createPlayer()], winner: null, suddenDeath: false, history: [] };
+  }
+  function getMove(id) { return BASIC[id] || LOOKUP[id] || SUDDEN[id] || null; }
+  function isCard(id) { return !!LOOKUP[id]; }
+  function validMove(player, id, suddenDeath) {
+    if (suddenDeath) return !!SUDDEN[id];
+    const move = BASIC[id] || LOOKUP[id];
+    return !!move && player.hp > 0 && player.energy >= move.cost &&
+      (id !== "burn" || player.hp > 1) &&
+      (!isCard(id) || !player.used.includes(id));
+  }
+  function availableMoves(player, suddenDeath) {
+    if (suddenDeath) return Object.keys(SUDDEN);
+    return Object.keys(BASIC).concat(CARDS.map(function (c) { return c.id; }))
+      .filter(function (id) { return validMove(player, id); });
+  }
+  function clampEnergy(v) { return Math.max(0, Math.min(MAX_ENERGY, v)); }
+
+  function resolveTurn(game, moveA, moveB) {
+    if (game.winner !== null) throw new Error("試合終了後に行動できません");
+    const ids = [moveA, moveB];
+    if (game.suddenDeath) {
+      if (!SUDDEN[moveA] || !SUDDEN[moveB]) throw new Error("サドンデスでは3択だけ選べます");
+      const winner = moveA === moveB ? null : (SD_WIN[moveA] === moveB ? 0 : 1);
+      const messages = ["P1：" + SUDDEN[moveA].name, "P2：" + SUDDEN[moveB].name,
+        winner === null ? "同じ手！ サドンデス続行！" : "SUDDEN DEATH 決着！"];
+      return {
+        turn: game.turn + 1,
+        players: game.players.map(function (p) { return { hp: p.hp, shield: p.shield || 0, energy: p.energy, used: p.used.slice() }; }),
+        winner: winner, suddenDeath: true,
+        history: game.history.concat([{ turn: game.turn, moves: ids, damages: [0, 0], messages: messages }])
+      };
+    }
+    const players = game.players.map(function (p) {
+      return { hp: p.hp, shield: p.shield || 0, energy: p.energy, used: p.used.slice() };
+    });
+    ids.forEach(function (id, i) {
+      if (!validMove(players[i], id, false)) throw new Error("使用できない行動: " + id);
+    });
+    const log = [];
+    ids.forEach(function (id, i) {
+      const move = getMove(id);
+      players[i].energy -= move.cost;
+      if (isCard(id)) players[i].used.push(id);
+      log.push("P" + (i + 1) + "：" + move.name);
+    });
+    // All costs and single-use cards are spent on declaration, even when countered.
+    const cancelled = [false, false];
+    for (let i = 0; i < 2; i++) {
+      const other = 1 - i;
+      if (ids[i] === "seal" && isCard(ids[other]) && ids[other] !== "judgment") {
+        cancelled[other] = true;
+      }
+    }
+    if (cancelled[0] || cancelled[1]) log.push("封印によって特殊カードが無効化！");
+    const gain = [0, 0], energyLoss = [0, 0];
+    // Seal versus seal cancels both cards, so neither earns a refund.
+    for (let i = 0; i < 2; i++) {
+      const other = 1 - i;
+      if (cancelled[i]) continue;
+      if (ids[i] === "seal" && isCard(ids[other]) && ids[other] !== "judgment") {
+        gain[i] += 1;
+        log.push("P" + (i + 1) + "の封印成功！ エネルギー+1");
+      } else if (ids[i] === "drain" && ids[other] === "charge") {
+        cancelled[other] = true;
+        gain[i] += 2;
+        log.push("P" + (i + 1) + "がチャージを奪った！");
+      } else if (ids[i] === "feint" && ids[other] === "guard") {
+        gain[i] += 3;
+        log.push("P" + (i + 1) + "のフェイント成功！");
+      } else if (ids[i] === "burn") {
+        gain[i] += 3;
+        log.push("P" + (i + 1) + "がHPを1消費してエネルギー+3！");
+      }
+    }
+    ids.forEach(function (id, i) {
+      if (id === "charge" && !cancelled[i]) gain[i]++;
+    });
+    const incoming = [0, 0], lifeHit = [false, false];
+    const damage = { attack: 1, pierce: 1, volley: 2, crush: 0,
+      final: 2, allin: 3, lifedrain: 1, chargehunter: 1 };
+    const reflectable = new Set(["attack", "volley", "allin", "lifedrain", "chargehunter"]);
+    for (let i = 0; i < 2; i++) {
+      const target = 1 - i, id = ids[i];
+      if (cancelled[i] || damage[id] === undefined) continue;
+      let amount = damage[id];
+      const response = cancelled[target] ? "" : ids[target];
+      if (id === "crush" && response === "guard") amount = 2;
+      if (response === "guard") {
+        if (id === "attack" || id === "volley" || id === "allin" ||
+            id === "lifedrain" || id === "chargehunter") amount = 0;
+        if (id === "final") amount = 1;
+      }
+      if (response === "read" && isCard(id)) amount = 0;
+      if (response === "counter" && reflectable.has(id)) {
+        const reflected = amount;
+        amount = 0;
+        incoming[i] += reflected; // Reflect damage only, never side effects.
+        log.push("P" + (target + 1) + "のカウンター成功！ " + reflected + "ダメージ反射");
+      }
+      if (amount > 0 && response === "charge") {
+        if (id === "attack" || id === "final" || id === "chargehunter") {
+          gain[target] = 0;
+          log.push("P" + (target + 1) + "のチャージが" +
+            (id === "attack" ? "通常攻撃で中断！" : "中断！"));
+        }
+        if (id === "chargehunter") {
+          energyLoss[target]++;
+          log.push("P" + (target + 1) + "のエネルギー-1");
+        }
+      }
+      if (id === "lifedrain" && amount > 0) lifeHit[i] = true;
+      incoming[target] += amount;
+    }
+    const judgmentA = ids[0] === "judgment", judgmentB = ids[1] === "judgment";
+    if (judgmentA !== judgmentB) {
+      const declaring = judgmentA ? 0 : 1;
+      incoming[declaring] = 0;
+      log.push("P" + (declaring + 1) + "の終局宣告が成立！ 即時勝利");
+    }
+    // New armor is active this turn. Self-harm bypasses it. Lifedrain heals
+    // on any landed hit (including shields), before simultaneous incoming damage.
+    players.forEach(function (p, i) {
+      if (ids[i] === "armor" && !cancelled[i]) {
+        p.shield += 2;
+        log.push("P" + (i + 1) + "がシールド2を展開！");
+      }
+      if (ids[i] === "burn" && !cancelled[i]) p.hp -= 1;
+      if (lifeHit[i]) {
+        p.hp = Math.min(START_HP, p.hp + 1);
+        log.push("P" + (i + 1) + "がHPを1回復！");
+      }
+    });
+    const absorbed = [0, 0];
+    players.forEach(function (p, i) {
+      p.energy = clampEnergy(p.energy + gain[i] - energyLoss[i]);
+      absorbed[i] = Math.min(p.shield, incoming[i]);
+      p.shield -= absorbed[i];
+      p.hp = Math.max(0, p.hp - (incoming[i] - absorbed[i]));
+    });
+    if (absorbed[0] || absorbed[1]) {
+      log.push("シールド吸収：P1 " + absorbed[0] + " / P2 " + absorbed[1]);
+    }
+    let winner = null;
+    if (judgmentA && judgmentB) winner = "draw";
+    else if (judgmentA) winner = 0;
+    else if (judgmentB) winner = 1;
+    else if (players[0].hp === 0 && players[1].hp === 0) winner = "draw";
+    else if (players[0].hp === 0) winner = 1;
+    else if (players[1].hp === 0) winner = 0;
+    const suddenDeath = winner === "draw";
+    if (suddenDeath) {
+      winner = null;
+      log.push("SUDDEN DEATH！ 攻撃・防御・崩しの3択で決着！");
+    }
+    if (incoming[0] || incoming[1]) {
+      log.push("ダメージ：P1 -" + incoming[0] + " / P2 -" + incoming[1]);
+    } else {
+      log.push("このターンはダメージなし");
+    }
+    return {
+      turn: game.turn + 1,
+      players: players,
+      winner: winner, suddenDeath: suddenDeath,
+      history: game.history.concat([{ turn: game.turn, moves: ids, damages: incoming, messages: log }])
+    };
+  }
+  const api = { MAX_ENERGY, START_HP, CARDS, BASIC, SUDDEN, createGame, getMove, isCard, validMove, availableMoves, resolveTurn };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  if (root) root.LemonRules = api;
+})(typeof window !== "undefined" ? window : undefined);
+
+</script>
+  <script>
+/* LEMON CLASH — fair simultaneous online turn protocol, shared by browser and Node.
+   Requires secure-context Web Crypto (HTTPS) or explicitly supplied digest implementation.
+   No Firebase imports and no side effects. */
+(function (root) {
+  "use strict";
+  const VERSION = 3; // RC8: new cards and persistent shields; never join RC6/RC7 rooms
+  const ALPHABET = "0123456789abcdef";
+  function assertText(value, field, max = 128) {
+    if (typeof value !== "string" || !value || value.length > max) {
+      throw new Error("Invalid " + field);
+    }
+  }
+  function assertTurn(turn) {
+    if (!Number.isSafeInteger(turn) || turn < 1) throw new Error("Invalid turn");
+  }
+  function freshNonce(secureCrypto) {
+    if (!secureCrypto || typeof secureCrypto.getRandomValues !== "function") {
+      throw new Error("Secure random generator required");
+    }
+    const bytes = new Uint8Array(32);
+    secureCrypto.getRandomValues(bytes);
+    return Array.from(bytes, n => ALPHABET[n >>> 4] + ALPHABET[n & 15]).join("");
+  }
+  function validateNonce(nonce) {
+    if (typeof nonce !== "string" || !/^[a-f0-9]{64}$/.test(nonce)) {
+      throw new Error("Invalid nonce");
+    }
+  }
+  function commitmentMessage(roomId, turn, uid, action, nonce) {
+    assertText(roomId, "room ID", 32);
+    assertTurn(turn);
+    assertText(uid, "player UID", 128);
+    assertText(action, "action", 32);
+    validateNonce(nonce);
+    return JSON.stringify(["lemon-clash-turn-v1", roomId, turn, uid, action, nonce]);
+  }
+  async function makeCommit(roomId, turn, uid, action, nonce, digest) {
+    if (!digest || typeof digest.digest !== "function" || typeof TextEncoder === "undefined") {
+      throw new Error("SHA-256 digest implementation required");
+    }
+    const bytes = new TextEncoder().encode(commitmentMessage(roomId, turn, uid, action, nonce));
+    const hash = new Uint8Array(await digest.digest("SHA-256", bytes));
+    return Array.from(hash, n => ALPHABET[n >>> 4] + ALPHABET[n & 15]).join("");
+  }
+  async function validateReveal(roomId, turn, uid, reveal, expected, digest, rules) {
+    if (!reveal || typeof reveal !== "object") throw new Error("Missing reveal");
+    if (typeof expected !== "string" || !/^[a-f0-9]{64}$/.test(expected)) {
+      throw new Error("Missing or invalid commitment");
+    }
+    if (!rules.getMove(reveal.action)) throw new Error("Unknown revealed action");
+    const actual = await makeCommit(roomId, turn, uid, reveal.action, reveal.nonce, digest);
+    if (actual !== expected) throw new Error("Reveal does not match commitment");
+    return reveal.action;
+  }
+  async function resolveCommittedRound(room, roomId, digest, rules) {
+    if (!room || !room.round || !room.game) return null;
+    const phase = room.round;
+    if (phase.turn !== room.game.turn) throw new Error("Out-of-sync round");
+    const ids = ["host", "guest"];
+    if (!ids.every(seat => phase.commits && phase.commits[seat] &&
+        phase.reveals && phase.reveals[seat])) return null;
+    const actions = await Promise.all(ids.map((seat, i) =>
+      validateReveal(roomId, phase.turn, seat === "host" ? room.hostUid : room.guestUid,
+        phase.reveals[seat], phase.commits[seat], digest, rules)));
+    return rules.resolveTurn(room.game, actions[0], actions[1]);
+  }
+  function emptyRound(turn) {
+    assertTurn(turn);
+    return { turn, commits: { host: null, guest: null }, reveals: { host: null, guest: null } };
+  }
+  function validRoomCode(code) { return typeof code === "string" && /^[0-9]{6}$/.test(code); }
+  function generateRoomCode(secureCrypto) {
+    if (!secureCrypto || typeof secureCrypto.getRandomValues !== "function") throw new Error("Secure random required");
+    const buffer = new Uint32Array(1);
+    secureCrypto.getRandomValues(buffer);
+    return String(buffer[0] % 1000000).padStart(6, "0");
+  }
+  const api = { VERSION, freshNonce, makeCommit, validateReveal, resolveCommittedRound,
+    emptyRound, validRoomCode, generateRoomCode };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  if (root) root.LemonOnlineProtocol = api;
+})(typeof window !== "undefined" ? window : undefined);
+
+</script>
+  <script>
+/* Google Sites school-friends transport.
+   BRAWL and Shokoku already use this Realtime Database. Lemon writes ONLY
+   to its own root `lemonClashRoomsV1`; do not modify their source or rooms.
+
+   Developer note: Firebase server Rules for this new namespace have NOT yet
+   been verified. A public RTDB without Auth cannot enforce player identity;
+   use for private friendly games only, and validate permissions before
+   treating it as release-ready. No player must enter a Firebase URL.
+
+   Test runners can inject a dedicated Auth+RTDB config before this file runs.
+*/
+window.LEMON_FIREBASE_CONFIG = window.LEMON_FIREBASE_CONFIG || {
+  mode: "shared-rtdb",
+  databaseURL: "https://mygame-df915-default-rtdb.firebaseio.com/"
+};
+
+</script>
+  <script>
+/* LEMON CLASH online 1v1 lab. HTTPS + separate Firebase Auth/RTDB required.
+   This file deliberately does NOT connect to BRAWL/Shokoku production.
+   Never exposes an uncommitted action to the other client's Firebase path. */
+(function () {
+  "use strict";
+  const R = window.LemonRules, P = window.LemonOnlineProtocol;
+  if (!R || !P) throw new Error("Game rules / online protocol missing");
+  const $ = id => document.getElementById(id);
+  const ROOM_ROOT = "lemonClashRoomsV1";
+  const LIB = "https://www.gstatic.com/firebasejs/10.8.0/";
+  const BASIC = ["charge", "attack", "guard"];
+  const CHAT_LIMIT = 20, CHAT_LENGTH = 120, CHAT_COOLDOWN_MS = 1500;
+  let firebaseApp = null, auth = null, database = null, uid = null;
+  let roomRef = null, roomCode = "", seat = null;
+  let game = null, selected = null, preview = null;
+  let viewedTurn = 0, showRound = false, roomData = null;
+  let secret = null, processing = false, queued = null, hasQueued = false, busy = false;
+  let listener = null, listeningError = null;
+  let sessionEpoch = 0;
+  let pendingWrites = Object.create(null);
+  // Result motion plays once per revealed turn, not on every Firebase snapshot.
+  let lastResultFxKey = "";
+  let chatOpen = false, sendingChat = false, lastSentAt = 0, lastChatView = null;
+
+  function setText(id, value) { $(id).textContent = value; }
+  function visible(id, yes) { $(id).classList.toggle("hidden", !yes); }
+  function error(message) {
+    setText("onlineError", message);
+    setText("lobbyStatus", message);
+    setText("msg", message);
+  }
+  function toggleChat() {
+    chatOpen = !chatOpen;
+    visible("chatPanel", chatOpen);
+    $("chatToggle").textContent = chatOpen ? "✕ 閉じる" : "💬 チャット";
+    $("chatToggle").setAttribute("aria-expanded", String(chatOpen));
+    if (chatOpen) $("chatMessages").scrollTop = $("chatMessages").scrollHeight;
+  }
+  function renderChat(messages) {
+    const rows = Array.isArray(messages) ? messages.slice(-CHAT_LIMIT) : [];
+    const signature = seat + ":" + JSON.stringify(rows);
+    if (signature === lastChatView) return;
+    lastChatView = signature;
+    const area = $("chatMessages");
+    area.replaceChildren();
+    if (!rows.length) {
+      const hint = document.createElement("p");
+      hint.className = "chatHint";
+      hint.textContent = "まだメッセージはありません。";
+      area.append(hint);
+    }
+    for (const entry of rows) {
+      if (!entry || (entry.seat !== "host" && entry.seat !== "guest") ||
+          typeof entry.text !== "string") continue;
+      const bubble = document.createElement("div");
+      bubble.className = "chatBubble " + (entry.seat === seat ? "mine" : "theirs");
+      const sender = document.createElement("strong");
+      sender.textContent = entry.seat === seat ? "自分" : "相手";
+      const message = document.createElement("span");
+      message.textContent = entry.text.slice(0, CHAT_LENGTH);
+      bubble.append(sender, message);
+      area.append(bubble);
+    }
+    if (chatOpen) area.scrollTop = area.scrollHeight;
+  }
+  async function sendChat() {
+    if (sendingChat || !roomRef || !seat || !roomData ||
+        (roomData.hostUid !== uid && roomData.guestUid !== uid)) return;
+    const input = $("chatInput");
+    const value = input.value.replace(/[\r\n\t]+/g, " ").trim();
+    if (!value) { setText("chatStatus", "メッセージを入力してね"); return; }
+    if (value.length > CHAT_LENGTH) {
+      setText("chatStatus", "120文字以内で入力してね"); return;
+    }
+    const timestamp = Date.now();
+    if (timestamp - lastSentAt < CHAT_COOLDOWN_MS) {
+      setText("chatStatus", "少し間を空けて送信してね"); return;
+    }
+    const activeRef = roomRef, epoch = sessionEpoch, sendingSeat = seat;
+    sendingChat = true;
+    $("chatSend").disabled = true;
+    setText("chatStatus", "送信中…");
+    try {
+      const sent = await transaction(activeRef.child("chatMessages"), previous => {
+        const list = Array.isArray(previous) ? previous.slice(-CHAT_LIMIT) : [];
+        return [...list, { seat: sendingSeat, text: value, at: timestamp }]
+          .slice(-CHAT_LIMIT);
+      });
+      if (epoch !== sessionEpoch || activeRef !== roomRef) return;
+      if (!sent) throw new Error("書き込みを確定できませんでした");
+      input.value = "";
+      lastSentAt = timestamp;
+      setText("chatStatus", "");
+    } catch (e) {
+      if (epoch === sessionEpoch && activeRef === roomRef)
+        setText("chatStatus", "送信できません: " + (e.message || String(e)));
+    } finally {
+      if (epoch === sessionEpoch && activeRef === roomRef) {
+        sendingChat = false;
+        $("chatSend").disabled = false;
+      }
+    }
+  }
+
+  function safeStorageKey(turn) {
+    return "lemon-clash-secret-v1:" + roomCode + ":" + uid + ":" + turn;
+  }
+  function saveSecret(turn, action, nonce, hash) {
+    const value = { turn, action, nonce, hash };
+    secret = value;
+    try { sessionStorage.setItem(safeStorageKey(turn), JSON.stringify(value)); } catch (e) {}
+  }
+  function restoreSecret(turn) {
+    if (secret && secret.turn === turn) return secret;
+    let stored = null;
+    try { stored = sessionStorage.getItem(safeStorageKey(turn)); } catch (e) {}
+    if (!stored) return null;
+    try {
+      const parsed = JSON.parse(stored);
+      if (parsed && parsed.turn === turn && R.getMove(parsed.action) &&
+          /^[a-f0-9]{64}$/.test(parsed.hash) && /^[a-f0-9]{64}$/.test(parsed.nonce)) {
+        secret = parsed;
+        return secret;
+      }
+    } catch (e) {}
+    return null;
+  }
+  function clearSecret(turn) {
+    secret = null;
+    try { sessionStorage.removeItem(safeStorageKey(turn)); } catch (e) {}
+  }
+
+  function readGame(value) {
+    if (!value || !Array.isArray(value.players) || value.players.length !== 2) {
+      throw new Error("同期中のゲーム状態が不正です");
+    }
+    return {
+      turn: value.turn,
+      winner: value.winner === undefined ? null : value.winner,
+      suddenDeath: value.suddenDeath === true,
+      history: Array.isArray(value.history) ? value.history : [],
+      players: value.players.map(p => ({
+        hp: p.hp, shield: p.shield, energy: p.energy, used: Array.isArray(p.used) ? p.used : []
+      }))
+    };
+  }
+  function latestGame(room) {
+    if (!room.states) throw new Error("ゲーム状態が見つかりません");
+    const turns = Object.keys(room.states).map(Number).filter(Number.isSafeInteger);
+    if (!turns.length) throw new Error("ゲーム状態が空です");
+    const turn = Math.max(...turns);
+    const current = readGame(room.states[String(turn)]);
+    if (current.turn !== turn) throw new Error("ゲームのターン番号が一致しません");
+    return current;
+  }
+  // Firebase Realtime Database may return object keys in a different order
+  // from the insertion order used when resolveTurn builds a history entry.
+  // JSON.stringify(a) === JSON.stringify(b) wrongly rejects those equal states.
+  // Compare the exact structure and values instead; array order still matters.
+  function sameStructuredValue(a, b) {
+    if (a === b) return true;
+    if (!a || !b || typeof a !== "object" || typeof b !== "object") return false;
+    if (Array.isArray(a) !== Array.isArray(b)) return false;
+    const keysA = Object.keys(a).sort(), keysB = Object.keys(b).sort();
+    if (keysA.length !== keysB.length) return false;
+    for (let i = 0; i < keysA.length; i++) {
+      if (keysA[i] !== keysB[i] ||
+          !sameStructuredValue(a[keysA[i]], b[keysB[i]])) return false;
+    }
+    return true;
+  }
+  async function verifyPublishedState(room, latest) {
+    // A room creator must not inject a custom starting HP, energy or cards.
+    if (latest.turn === 1) {
+      const initial = R.createGame();
+      if (latest.winner !== initial.winner || latest.suddenDeath !== initial.suddenDeath ||
+          JSON.stringify(latest.history) !== JSON.stringify(initial.history) ||
+          JSON.stringify(latest.players) !== JSON.stringify(initial.players)) {
+        throw new Error("開始時のゲーム状態が正しくありません");
+      }
+      return;
+    }
+    const previous = room.states && room.states[String(latest.turn - 1)];
+    const entries = room.rounds && room.rounds[String(latest.turn - 1)];
+    if (!previous || !entries || !entries.host || !entries.guest ||
+        !entries.host.reveal || !entries.guest.reveal) {
+      throw new Error("未検証のターン結果が送信されました");
+    }
+    const earlier = readGame(previous);
+    const expected = await P.resolveCommittedRound({
+      hostUid: room.hostUid,
+      guestUid: room.guestUid,
+      game: earlier,
+      round: {
+        turn: earlier.turn,
+        commits: { host: entries.host.hash, guest: entries.guest.hash },
+        reveals: { host: entries.host.reveal, guest: entries.guest.reveal }
+      }
+    }, roomCode, window.crypto.subtle, R);
+    if (!expected || expected.turn !== latest.turn || expected.winner !== latest.winner ||
+        expected.suddenDeath !== latest.suddenDeath ||
+        !sameStructuredValue(expected.history, latest.history)) {
+      throw new Error("両端末のターン結果が一致していません");
+    }
+    for (let i = 0; i < 2; i++) {
+      const a = expected.players[i], b = latest.players[i];
+      if (a.hp !== b.hp || a.shield !== b.shield || a.energy !== b.energy ||
+          JSON.stringify(a.used) !== JSON.stringify(b.used)) {
+        throw new Error("HP・シールド・エネルギー・使用済みカードが同期していません");
+      }
+    }
+  }
+
+  function resetSelection() {
+    selected = null;
+    preview = null;
+    const info = $("cardDetail");
+    info.replaceChildren();
+    const heading = document.createElement("strong");
+    heading.textContent = game && game.suddenDeath ? "⚡ SUDDEN DEATH" : "カードを選ぼう";
+    const detail = document.createElement("p");
+    detail.textContent = game && game.suddenDeath ?
+      "攻撃は崩しに、崩しは防御に、防御は攻撃に勝つ。相手と同じ手ならもう一度。" :
+      "カードを選択すると、ここに能力が表示されます。";
+    info.append(heading, detail);
+    setText("selectedDetail", "行動を選択してください");
+  }
+  function displayStatus() {
+    if (!game) return;
+    const selfIndex = seat === "host" ? 0 : 1;
+    const self = game.players[selfIndex], other = game.players[1 - selfIndex];
+    setText("myName", "YOU · " + (selfIndex + 1) + "P");
+    setText("opName", "RIVAL · " + (2 - selfIndex) + "P");
+    setText("myHp", "♥ " + self.hp + "/" + R.START_HP + (self.shield ? " 🛡️" + self.shield : ""));
+    setText("opHp", "♥ " + other.hp + "/" + R.START_HP + (other.shield ? " 🛡️" + other.shield : ""));
+    setText("myEn", "⚡ " + self.energy + "/" + R.MAX_ENERGY);
+    setText("opEn", "⚡ " + other.energy + "/" + R.MAX_ENERGY);
+    // Static, low-cost visual indicator. Never changes game logic or HP.
+    $("myFighter").classList.toggle("critical", self.hp === 1 && game.winner === null);
+    $("opFighter").classList.toggle("critical", other.hp === 1 && game.winner === null);
+    $("opMeter").classList.toggle("danger", other.energy >= R.MAX_ENERGY);
+    visible("opWarning", other.energy >= R.MAX_ENERGY &&
+      !game.suddenDeath && game.winner === null);
+    for (const [id, n] of [["myMeter", self.energy], ["opMeter", other.energy]]) {
+      const meter = $(id);
+      meter.replaceChildren();
+      for (let i = 0; i < R.MAX_ENERGY; i++) {
+        const bar = document.createElement("i");
+        if (i < n) bar.className = "on";
+        meter.append(bar);
+      }
+    }
+  }
+  function createMove(id, player) {
+    const move = R.getMove(id);
+    const used = R.isCard(id) && player.used.includes(id);
+    const valid = R.validMove(player, id, game.suddenDeath);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "move cost" + move.cost + (preview === id ? " selected" : "") +
+      (!valid && !used ? " unaffordable" : "");
+    button.disabled = used;
+    button.setAttribute("aria-pressed", String(preview === id));
+    button.setAttribute("aria-label", move.name + " 消費" + move.cost + (used ? " 使用済み" : ""));
+    for (const [css, text] of [
+      ["cost", "⚡ " + move.cost],
+      ["symbol", used ? "✓" : move.icon],
+      ["movename", move.name],
+      ["effect", used ? "使用済み" : move.description]
+    ]) {
+      const elem = document.createElement("span");
+      elem.className = css;
+      elem.textContent = text;
+      button.append(elem);
+    }
+    button.addEventListener("click", () => {
+      preview = id;
+      selected = valid ? id : null;
+      const title = document.createElement("strong");
+      title.textContent = move.icon + " " + move.name + " · ⚡" + move.cost;
+      const desc = document.createElement("p");
+      desc.textContent = move.description + (R.isCard(id) ? "（使い切り）" : "");
+      $("cardDetail").replaceChildren(title, desc);
+      setText("selectedDetail", valid ? "確定すると取り消せません。" :
+        (id === "burn" && player.hp === 1 ? "HP1では生命燃焼を使えません" :
+          "必要なエネルギーが足りません（⚡" + move.cost + "）"));
+      drawHand();
+    });
+    return button;
+  }
+  function drawHand() {
+    if (!game || !seat) return;
+    const self = game.players[seat === "host" ? 0 : 1];
+    const cards = $("cards"), scroll = cards.scrollLeft;
+    const sudden = game.suddenDeath;
+    $("basics").replaceChildren(...(sudden ? Object.keys(R.SUDDEN) : BASIC)
+      .map(id => createMove(id, self)));
+    cards.replaceChildren(...(sudden ? [] : R.CARDS.map(card => createMove(card.id, self))));
+    cards.scrollLeft = scroll;
+    setText("basicHeading", sudden ? "SUDDEN DEATH · 最後の3択" : "基本アクション");
+    visible("specialHeading", !sudden);
+    $("confirm").disabled = !selected || !R.validMove(self, selected, sudden) || busy;
+  }
+  function drawLog() {
+    const elem = $("logList");
+    elem.replaceChildren();
+    const history = game.history.slice(-10).reverse();
+    if (!history.length) { elem.textContent = "まだ対戦履歴はありません。"; return; }
+    for (const entry of history) {
+      const row = document.createElement("div");
+      row.className = "logrow";
+      row.textContent = "TURN " + entry.turn + "　" + (entry.messages || []).join(" / ");
+      elem.append(row);
+    }
+  }
+  function showLastTurn() {
+    const elem = $("roundResult");
+    elem.replaceChildren();
+    const last = game.history[game.history.length - 1];
+    const wrap = document.createElement("div");
+    const ownIndex = seat === "host" ? 0 : 1;
+    const status = game.winner === null ? "turn" :
+      game.winner === "draw" ? "draw" : game.winner === ownIndex ? "win" : "lose";
+    wrap.className = "result result-" + status;
+    const effectKey = roomCode + ":" + game.turn + ":" + game.winner;
+    if (lastResultFxKey !== effectKey) {
+      wrap.className += " result-enter";
+      lastResultFxKey = effectKey;
+    }
+    const heading = document.createElement("h2");
+    if (game.winner === null && game.suddenDeath)
+      heading.textContent = last && last.moves[0].startsWith("sd_") ?
+        "同じ手！ サドンデス続行！" : "SUDDEN DEATH 突入！";
+    else if (game.winner !== null) heading.textContent =
+      game.winner === (seat === "host" ? 0 : 1) ? "勝利！" : "敗北…";
+    else heading.textContent = "同時公開！";
+    // Present both secret actions simultaneously. Each player's view marks
+    // their own action so a quick glance is enough during school play.
+    const actions = document.createElement("div");
+    actions.className = "turnReveal";
+    actions.setAttribute("aria-label", "両プレイヤーの公開した行動");
+    if (last) {
+      for (let i = 0; i < 2; i++) {
+        const move = R.getMove(last.moves[i]);
+        const piece = document.createElement("div");
+        piece.className = "revealPiece " + (i === ownIndex ? "reveal-me" : "reveal-op");
+        const who = document.createElement("small");
+        who.className = "revealOwner";
+        who.textContent = i === ownIndex ? "YOU · " + (i + 1) + "P" :
+          "RIVAL · " + (i + 1) + "P";
+        const symbol = document.createElement("span");
+        symbol.className = "big";
+        symbol.textContent = move.icon;
+        const name = document.createElement("b");
+        name.textContent = move.name;
+        const damage = document.createElement("small");
+        const taken = last.damages && Number.isFinite(last.damages[i]) ?
+          last.damages[i] : 0;
+        damage.textContent = "⚡" + move.cost + " · 被ダメージ " + (taken ? "-" + taken : "0");
+        piece.append(who, symbol, name, damage);
+        actions.append(piece);
+      }
+    } else {
+      actions.textContent = "対戦開始";
+    }
+    const details = document.createElement("p");
+    details.className = "resultInfo";
+    details.textContent = last ? last.messages.slice(2).join(" / ") : "";
+    wrap.append(heading, actions, details);
+
+    if (game.winner !== null) {
+      const myRematch = roomData && roomData.rematch && roomData.rematch[seat];
+      const otherSeat = seat === "host" ? "guest" : "host";
+      const otherRematch = roomData && roomData.rematch && roomData.rematch[otherSeat];
+
+      const rematchBtn = document.createElement("button");
+      rematchBtn.className = "btn";
+      rematchBtn.style.marginBottom = "10px";
+      rematchBtn.textContent = myRematch ?
+        (otherRematch ? "再戦準備中..." : "相手の再戦待ち...") :
+        "もう一度対戦する（再戦）";
+      rematchBtn.disabled = !!myRematch;
+      rematchBtn.addEventListener("click", async () => {
+        if (!roomRef || !seat) return;
+        const originalRef = roomRef, epoch = sessionEpoch;
+        rematchBtn.disabled = true;
+        rematchBtn.textContent = "相手の再戦待ち...";
+        try {
+          await originalRef.child("rematch/" + seat).set(true);
+        } catch (e) {
+          if (epoch === sessionEpoch && originalRef === roomRef) {
+            error("再戦リクエストに失敗しました: " + (e.message || String(e)));
+            rematchBtn.disabled = false;
+          }
+        }
+      });
+      wrap.append(rematchBtn);
+
+      const titleBtn = document.createElement("button");
+      titleBtn.className = "btn secondary small";
+      titleBtn.textContent = "タイトルに戻る";
+      titleBtn.addEventListener("click", leave);
+      wrap.append(titleBtn);
+    } else {
+      const advance = document.createElement("button");
+      advance.className = "btn";
+      advance.textContent = game.suddenDeath ? "サドンデスの3択へ" : "次のターンへ";
+      advance.addEventListener("click", () => {
+        viewedTurn = game.turn;
+        showRound = false;
+        resetSelection();
+        redraw();
+      });
+      wrap.append(advance);
+    }
+    elem.append(wrap);
+  }
+  function redraw() {
+    if (!game || !seat) return;
+    visible("home", false);
+    visible("onlineLobby", false);
+    visible("battle", true);
+    visible("roomChat", true);
+    displayStatus();
+    drawLog();
+    if (game.winner !== null || showRound) {
+      // A revealed turn must not retain the stale "waiting for commit" label.
+      const verdict = game.winner === "draw" ? "引き分け" :
+        game.winner === (seat === "host" ? 0 : 1) ? "勝利" : "敗北";
+      setText("msg", game.winner !== null ?
+        "MATCH END · " + verdict :
+        (game.suddenDeath ? "SUDDEN DEATH" : "TURN " + (game.turn - 1)) + " · 行動公開");
+      visible("pickArea", false);
+      visible("onlineWait", false);
+      visible("roundResult", true);
+      showLastTurn();
+      return;
+    }
+    visible("roundResult", false);
+    const ownEntry = roomData && roomData.rounds &&
+      roomData.rounds[String(game.turn)] && roomData.rounds[String(game.turn)][seat];
+    const isWaiting = !!(ownEntry && ownEntry.hash);
+    visible("pickArea", !isWaiting);
+    visible("onlineWait", isWaiting);
+    if (isWaiting) {
+      const other = seat === "host" ? "guest" : "host";
+      const opponent = roomData.rounds[String(game.turn)] &&
+        roomData.rounds[String(game.turn)][other];
+      setText("onlineWait", opponent && opponent.hash ?
+        "両者が確定！ 行動を同時公開しています…" : "行動を確定しました。相手の選択を待っています…");
+    } else drawHand();
+    setText("msg", (game.suddenDeath ? "SUDDEN DEATH" : "TURN " + game.turn) +
+      " · " + (isWaiting ? "確定待機中" :
+      game.suddenDeath ? "攻撃 ＞ 崩し ＞ 防御 ＞ 攻撃。同時に選択！" :
+      "相手の行動を読んで選択しよう"));
+  }
+  function showWaitingRoom() {
+    visible("home", false);
+    visible("battle", false);
+    visible("onlineLobby", true);
+    visible("roomChat", true);
+    setText("lobbyCode", roomCode);
+    setText("lobbyStatus", "友達の参加を待っています（ルーム " + roomCode + "）");
+  }
+  function turnPendingPath(turn) { return "rounds/" + turn + "/" + seat; }
+  async function transaction(ref, updater) {
+    const result = await ref.transaction(updater, undefined, false);
+    return result.committed;
+  }
+  async function submit() {
+    if (!game || game.winner !== null || !seat || !selected || busy || !roomRef) return;
+    const own = game.players[seat === "host" ? 0 : 1];
+    if (!R.validMove(own, selected, game.suddenDeath)) return;
+    const turn = game.turn, action = selected;
+    const epoch = sessionEpoch, originalRoomRef = roomRef;
+    const nonce = P.freshNonce(window.crypto);
+    busy = true;
+    $("confirm").disabled = true;
+    let committed = false;
+    try {
+      const hash = await P.makeCommit(roomCode, turn, uid, action, nonce, window.crypto.subtle);
+      // Ignore a late digest from a match already left or replaced.
+      if (epoch !== sessionEpoch || originalRoomRef !== roomRef) return;
+      // Never send action or nonce to the database until both players have committed.
+      saveSecret(turn, action, nonce, hash);
+      const ref = originalRoomRef.child(turnPendingPath(turn));
+      const ok = await transaction(ref, current => current === null ? { hash } : undefined);
+      if (epoch !== sessionEpoch || originalRoomRef !== roomRef) return;
+      if (!ok) throw new Error("このターンはすでに行動確定済みです");
+      committed = true;
+      selected = null;
+      preview = null;
+      setText("msg", "行動確定。相手を待っています…");
+      visible("pickArea", false);
+      visible("onlineWait", true);
+      setText("onlineWait", "行動を確定しました。相手の選択を待っています…");
+    } catch (e) {
+      if (epoch === sessionEpoch) {
+        error("確定に失敗しました: " + (e.message || String(e)));
+      }
+    } finally {
+      if (epoch === sessionEpoch && originalRoomRef === roomRef) {
+        busy = false;
+        // A denied/failed write must not permanently disable "Confirm".
+        // Successful commits stay locked until a Firebase room update.
+        if (!committed && game && game.winner === null && seat) drawHand();
+      }
+    }
+  }
+  async function synchronize(room, epoch) {
+    if (epoch !== sessionEpoch || !seat || !roomRef) return;
+    if (!room) {
+      leave();
+      error("対戦ルームがなくなりました。新しい部屋を作成してください");
+      return;
+    }
+    if (room.protocol !== P.VERSION) throw new Error("対戦プロトコルのバージョンが異なります");
+    if (room.hostUid !== uid && room.guestUid !== uid) {
+      throw new Error("このルームの参加権限がありません");
+    }
+    // Chat-only snapshots must not rebuild the hand or lose its scroll position.
+    // They carry no new turn, commitment or rematch data.
+    const chatOnly = !!roomData &&
+      !sameStructuredValue(room.chatMessages, roomData.chatMessages) &&
+      room.hostUid === roomData.hostUid &&
+      room.guestUid === roomData.guestUid &&
+      sameStructuredValue(room.states, roomData.states) &&
+      sameStructuredValue(room.rounds, roomData.rounds) &&
+      sameStructuredValue(room.rematch, roomData.rematch);
+    roomData = room;
+    renderChat(room.chatMessages);
+    if (chatOnly) return;
+    // Gemini school release: both players can opt into another game with
+    // their existing 6-digit room. Only the host applies the reset.
+    if (room.rematch && room.rematch.host && room.rematch.guest) {
+      if (seat === "host") {
+        const resetKey = "rematch-reset-exec";
+        if (!pendingWrites[resetKey]) {
+          pendingWrites[resetKey] = true;
+          try {
+            await roomRef.update({
+              states: { 1: R.createGame() },
+              rounds: null,
+              rematch: null
+            });
+          } finally {
+            pendingWrites[resetKey] = false;
+          }
+        }
+      }
+      return;
+    }
+    if (!room.guestUid) { showWaitingRoom(); return; }
+    const incoming = latestGame(room);
+    if (!game || incoming.turn !== game.turn) {
+      await verifyPublishedState(room, incoming);
+      if (epoch !== sessionEpoch || !roomRef) return;
+      if (game && incoming.turn > game.turn) clearSecret(game.turn);
+      if (game && incoming.turn < game.turn) {
+        // Replayed turn numbers belong to a NEW match. Without resetting
+        // viewedTurn, the first few results of a rematch can be hidden.
+        clearSecret(game.turn);
+        viewedTurn = 1;
+        showRound = false;
+        lastResultFxKey = "";
+        pendingWrites = Object.create(null);
+      }
+      game = incoming;
+      selected = null;
+      preview = null;
+      resetSelection();
+      showRound = game.turn > viewedTurn && game.turn > 1;
+      if (game.turn === 1 && viewedTurn === 0) viewedTurn = 1;
+    } else game = incoming;
+    redraw();
+    if (game.winner !== null) return;
+    const turn = game.turn;
+    const entries = room.rounds && room.rounds[String(turn)] || {};
+    const me = entries[seat] || null;
+    const otherSeat = seat === "host" ? "guest" : "host";
+    const them = entries[otherSeat] || null;
+    // Automatically reveal only after BOTH hashed commitments have been stored.
+    if (me && me.hash && them && them.hash && !me.reveal) {
+      const pending = restoreSecret(turn);
+      if (!pending) {
+        setText("onlineWait", "確定済みの秘密情報が失われました。新しい部屋を作り直してください。");
+        return;
+      }
+      const hash = await P.makeCommit(roomCode, turn, uid, pending.action, pending.nonce,
+        window.crypto.subtle);
+      if (epoch !== sessionEpoch || !roomRef) return;
+      if (hash !== me.hash) throw new Error("保存された選択とコミットが一致しません");
+      const key = "reveal:" + turn;
+      if (!pendingWrites[key]) {
+        pendingWrites[key] = true;
+        try {
+          await transaction(roomRef.child(turnPendingPath(turn)), current => {
+            if (!current || !current.hash || current.hash !== pending.hash || current.reveal) return;
+            return { hash: current.hash, reveal: { action: pending.action, nonce: pending.nonce } };
+          });
+        } finally { pendingWrites[key] = false; }
+      }
+    }
+    if (me && me.reveal && them && them.reveal && !room.states[String(turn + 1)]) {
+      const phase = {
+        turn, commits: {
+          host: entries.host.hash, guest: entries.guest.hash
+        }, reveals: {
+          host: entries.host.reveal, guest: entries.guest.reveal
+        }
+      };
+      const resolved = await P.resolveCommittedRound({
+        hostUid: room.hostUid, guestUid: room.guestUid, game,
+        round: phase
+      }, roomCode, window.crypto.subtle, R);
+      if (epoch !== sessionEpoch || !roomRef) return;
+      if (resolved) {
+        const key = "resolve:" + turn;
+        if (!pendingWrites[key]) {
+          pendingWrites[key] = true;
+          try {
+            await transaction(roomRef.child("states/" + (turn + 1)),
+              current => current === null ? resolved : undefined);
+          } finally { pendingWrites[key] = false; }
+        }
+      }
+    }
+  }
+  async function processQueue() {
+    if (processing) return;
+    processing = true;
+    let processingEpoch = sessionEpoch;
+    try {
+      while (hasQueued) {
+        const data = queued;
+        hasQueued = false;
+        queued = null;
+        processingEpoch = data.epoch;
+        await synchronize(data.room, data.epoch);
+      }
+    } catch (e) {
+      if (processingEpoch === sessionEpoch) {
+        error("通信データを処理できません: " + (e.message || String(e)));
+      }
+    } finally {
+      processing = false;
+      if (hasQueued) processQueue();
+    }
+  }
+  function observe(ref) {
+    if (roomRef && listener) roomRef.off("value", listener);
+    roomRef = ref;
+    const epoch = ++sessionEpoch;
+    listener = snapshot => {
+      if (epoch !== sessionEpoch) return;
+      queued = {room: snapshot.val(), epoch};
+      hasQueued = true;
+      processQueue();
+    };
+    listeningError = e => {
+      if (epoch === sessionEpoch) error("Firebaseの読み取り権限または通信に問題があります: " + e.message);
+    };
+    ref.on("value", listener, listeningError);
+  }
+  function leave() {
+    if (roomRef && listener) roomRef.off("value", listener);
+    sessionEpoch++;
+    roomRef = null; listener = null; roomCode = ""; seat = null; secret = null;
+    roomData = null; game = null; selected = null; preview = null;
+    viewedTurn = 0; showRound = false; busy = false; queued = null; hasQueued = false;
+    lastResultFxKey = "";
+    chatOpen = false; sendingChat = false; lastSentAt = 0; lastChatView = null;
+    $("chatInput").value = "";
+    $("chatSend").disabled = false;
+    setText("chatStatus", "");
+    visible("chatPanel", false);
+    visible("roomChat", false);
+    $("chatToggle").textContent = "💬 チャット";
+    $("chatToggle").setAttribute("aria-expanded", "false");
+    pendingWrites = Object.create(null);
+    visible("home", true);
+    visible("onlineLobby", false);
+    visible("battle", false);
+    $("onlineHost").disabled = $("onlineJoin").disabled = false;
+    resetSelection();
+    setText("onlineError", "別の対戦をするには、新しい部屋を作成または参加してね。");
+  }
+  async function loadSDK(name) {
+    if (document.querySelector('script[data-firebase-sdk="' + name + '"]')) return;
+    await new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = LIB + name;
+      script.dataset.firebaseSdk = name;
+      script.onload = resolve;
+      script.onerror = () => {
+        script.remove();
+        reject(new Error("Firebase SDKを読み込めません（学校ネットワーク制限の可能性）"));
+      };
+      document.head.append(script);
+    });
+  }
+  function localPlayerId() {
+    // The shared RTDB used by BRAWL/Shokoku has no Firebase Auth configuration.
+    // Generate a separate random local identifier; it is NOT authentication.
+    // This is for private friend play only, never a security boundary.
+    const key = "lemon-clash-player-id-v1";
+    let id = "";
+    try { id = window.localStorage.getItem(key) || ""; } catch (e) {}
+    if (!/^lc-[a-f0-9]{64}$/.test(id)) {
+      id = "lc-" + P.freshNonce(window.crypto);
+      try { window.localStorage.setItem(key, id); } catch (e) {}
+    }
+    return id;
+  }
+  async function initializeFirebase() {
+    const config = window.LEMON_FIREBASE_CONFIG;
+    const shared = config && config.mode === "shared-rtdb";
+    if (!config || typeof config.databaseURL !== "string" ||
+        (!shared && !["apiKey", "authDomain", "projectId", "appId"].every(k =>
+          typeof config[k] === "string" && config[k]))) {
+      throw new Error("Firebaseの接続設定がありません");
+    }
+    if (!/^https:\/\/[a-z0-9.-]+\.(?:firebaseio\.com|firebasedatabase\.app)\/?$/i.test(config.databaseURL)) {
+      throw new Error("Firebase RTDBのURLが不正です");
+    }
+    if (!window.crypto || !window.crypto.subtle) {
+      throw new Error("HTTPSなどの安全なコンテキストで開いてください");
+    }
+    if (!window.firebase || !window.firebase.database ||
+        (!shared && !window.firebase.auth)) {
+      await loadSDK("firebase-app-compat.js");
+      if (!shared) await loadSDK("firebase-auth-compat.js");
+      await loadSDK("firebase-database-compat.js");
+    }
+    const appConfig = shared ? { databaseURL: config.databaseURL } : config;
+    firebaseApp = window.firebase.apps.length ? window.firebase.app() :
+      window.firebase.initializeApp(appConfig);
+    database = firebaseApp.database();
+    if (shared) {
+      // Existing school games use unauthenticated RTDB. Keep Lemon writes
+      // under lemonClashRoomsV1 only; do not alter any other game's rooms.
+      uid = localPlayerId();
+      return;
+    }
+    auth = firebaseApp.auth();
+    // Never point published GitHub Pages / Google Sites at a local emulator.
+    if (window.__LEMON_EMULATOR_ONLY__ === true && config.projectId === "demo-lemon-clash" &&
+        (window.location.hostname === "127.0.0.1" || window.location.protocol === "about:")) {
+      auth.useEmulator("http://127.0.0.1:9099");
+      database.useEmulator("127.0.0.1", 9000);
+    }
+    const session = auth.currentUser || (await auth.signInAnonymously()).user;
+    if (!session || !session.uid) throw new Error("匿名ログインに失敗しました");
+    uid = session.uid;
+  }
+  async function makeRoom() {
+    if (busy) return;
+    const startedAt = sessionEpoch;
+    let adoptedEpoch = startedAt;
+    busy = true;
+    $("onlineHost").disabled = $("onlineJoin").disabled = true;
+    setText("onlineError", "Firebaseへ接続しています…");
+    try {
+      await initializeFirebase();
+      if (startedAt !== sessionEpoch) return;
+      for (let i = 0; i < 8; i++) {
+        const code = P.generateRoomCode(window.crypto);
+        const ref = database.ref(ROOM_ROOT + "/" + code);
+        const initial = {
+          protocol: P.VERSION,
+          createdAt: Date.now(),
+          hostUid: uid,
+          states: { 1: R.createGame() }
+        };
+        const ok = await transaction(ref, current => current === null ? initial : undefined);
+        if (startedAt !== sessionEpoch) return;
+        if (!ok) continue;
+        roomCode = code;
+        seat = "host";
+        viewedTurn = 1;
+        showWaitingRoom();
+        observe(ref);
+        adoptedEpoch = sessionEpoch;
+        return;
+      }
+      throw new Error("ルームを作れませんでした。しばらく待って再試行してください");
+    } catch (e) {
+      if (startedAt === sessionEpoch) error("部屋作成失敗: " + (e.message || String(e)));
+    } finally {
+      if (adoptedEpoch === sessionEpoch) {
+        busy = false;
+        $("onlineHost").disabled = $("onlineJoin").disabled = false;
+      }
+    }
+  }
+  async function joinRoom() {
+    if (busy) return;
+    const code = $("roomInput").value.replace(/\s+/g, "");
+    if (!P.validRoomCode(code)) {
+      error("部屋コードは6桁の数字で入力してください");
+      return;
+    }
+    const startedAt = sessionEpoch;
+    let adoptedEpoch = startedAt;
+    busy = true;
+    $("onlineHost").disabled = $("onlineJoin").disabled = true;
+    setText("onlineError", "部屋に参加しています…");
+    try {
+      await initializeFirebase();
+      if (startedAt !== sessionEpoch) return;
+      const ref = database.ref(ROOM_ROOT + "/" + code);
+      const snapshot = await ref.once("value");
+      if (startedAt !== sessionEpoch) return;
+      const current = snapshot.val();
+      if (!current || current.protocol !== P.VERSION) throw new Error("この部屋は見つかりません");
+      const returningHost = current.hostUid === uid;
+      if (!returningHost && current.guestUid && current.guestUid !== uid) {
+        throw new Error("この部屋は満員です");
+      }
+      if (Date.now() - current.createdAt > 7200000) throw new Error("この部屋の有効期限が切れています");
+      if (!returningHost && !current.guestUid) {
+        const ok = await transaction(ref.child("guestUid"),
+          data => data === null ? uid : undefined);
+        if (startedAt !== sessionEpoch) return;
+        if (!ok) throw new Error("別の人が先に入室しました");
+      }
+      roomCode = code;
+      seat = returningHost ? "host" : "guest";
+      viewedTurn = 1;
+      showWaitingRoom();
+      observe(ref);
+      adoptedEpoch = sessionEpoch;
+    } catch (e) {
+      if (startedAt === sessionEpoch) error("部屋参加失敗: " + (e.message || String(e)));
+    } finally {
+      if (adoptedEpoch === sessionEpoch) {
+        busy = false;
+        $("onlineHost").disabled = $("onlineJoin").disabled = false;
+      }
+    }
+  }
+  $("chatToggle").addEventListener("click", toggleChat);
+  $("chatSend").addEventListener("click", sendChat);
+  $("chatInput").addEventListener("keydown", event => {
+    // IME Enter confirms Japanese conversion; it must not send the message.
+    if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229) {
+      event.preventDefault();
+      sendChat();
+    }
+  });
+  $("onlineHost").addEventListener("click", makeRoom);
+  $("onlineJoin").addEventListener("click", joinRoom);
+  $("roomInput").addEventListener("keydown", event => {
+    if (event.key === "Enter") joinRoom();
+  });
+  $("confirm").addEventListener("click", submit);
+  $("onlineLobbyExit").addEventListener("click", leave);
+  $("quit").addEventListener("click", leave);
+  resetSelection();
+})();
+
+</script>
+</body></html>
