@@ -356,7 +356,16 @@
         const damage = document.createElement("small");
         const taken = last.damages && Number.isFinite(last.damages[i]) ?
           last.damages[i] : 0;
-        damage.textContent = "⚡" + move.cost + " · 被ダメージ " + (taken ? "-" + taken : "0");
+        const prior = roomData && roomData.states &&
+          roomData.states[String(game.turn - 1)];
+        const prevEnergy = prior && Array.isArray(prior.players) &&
+          prior.players[i] && Number.isFinite(prior.players[i].energy) ?
+          prior.players[i].energy : null;
+        const nextEnergy = game.players[i].energy;
+        const energyChange = prevEnergy === null ? "残⚡" + nextEnergy :
+          "⚡" + prevEnergy + "→" + nextEnergy;
+        damage.textContent = "消費⚡" + move.cost + " · " + energyChange +
+          " · 被ダメージ " + (taken ? "-" + taken : "0");
         piece.append(who, symbol, name, damage);
         actions.append(piece);
       }
