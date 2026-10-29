@@ -4,17 +4,21 @@
   const MAX_ENERGY = 10;
   const START_HP = 3;
   const CARDS = Object.freeze([
-    { id: "feint", name: "フェイント", cost: 1, icon: "🎭", type: "utility", description: "相手が通常防御ならエネルギー+3" },
-    { id: "drain", name: "エネルギー泥棒", cost: 1, icon: "🌀", type: "utility", description: "相手のチャージを無効にし、自分のエネルギー+2" },
-    { id: "read", name: "見切り", cost: 1, icon: "👁️", type: "defense", description: "相手の特殊攻撃カードを無効化" },
-    { id: "pierce", name: "貫通攻撃", cost: 2, icon: "🗡️", type: "attack", description: "通常防御を貫通して1ダメージ" },
-    { id: "counter", name: "カウンター", cost: 2, icon: "🪞", type: "defense", description: "通常攻撃・連撃・オールインを防いで1ダメージ反射" },
-    { id: "seal", name: "封印", cost: 2, icon: "🔒", type: "control", description: "終局宣告以外の特殊カードをすべて無効化" },
-    { id: "volley", name: "連撃", cost: 3, icon: "⚔️", type: "attack", description: "2ダメージ。通常防御には防がれる" },
-    { id: "crush", name: "粉砕", cost: 3, icon: "💥", type: "attack", description: "通常防御に2ダメージ、それ以外には1ダメージ" },
-    { id: "final", name: "終焉の一撃", cost: 4, icon: "☄️", type: "attack", description: "2ダメージ。通常防御でも1ダメージ" },
-    { id: "allin", name: "オールイン", cost: 5, icon: "🔥", type: "attack", description: "3ダメージ。通常防御には防がれる" },
-    { id: "judgment", name: "終局宣告", cost: 10, icon: "👑", type: "ultimate", description: "使用が成立した時点で勝利。防御・見切り・封印・カウンター無効" }
+    {"id":"feint","name":"フェイント","cost":1,"icon":"🎭","type":"utility","description":"相手が通常防御ならエネルギー+3。封印で防がれる"},
+    {"id":"drain","name":"エネルギー泥棒","cost":1,"icon":"🌀","type":"utility","description":"相手のチャージを中断し、自分のエネルギー+2。封印で防がれる"},
+    {"id":"read","name":"見切り","cost":1,"icon":"👁️","type":"defense","description":"特殊攻撃のダメージを防ぐ。封印で無効化される"},
+    {"id":"burn","name":"生命燃焼","cost":1,"icon":"🔥","type":"utility","description":"自分のHPを1消費し、エネルギー+3。HP1では使用不可。封印で防がれる"},
+    {"id":"pierce","name":"貫通攻撃","cost":2,"icon":"🗡️","type":"attack","description":"通常防御を貫通して1ダメージ。見切り・封印で防がれる"},
+    {"id":"counter","name":"カウンター","cost":2,"icon":"🪞","type":"defense","description":"通常攻撃・連撃・オールイン・生命吸収・チャージ狩りのダメージを全反射。封印で無効"},
+    {"id":"seal","name":"封印","cost":2,"icon":"🔒","type":"control","description":"終局宣告以外の特殊カードを無効化。成功するとエネルギー+1"},
+    {"id":"chargehunter","name":"チャージ狩り","cost":2,"icon":"🎯","type":"attack","description":"1ダメージ。チャージ相手には中断＋エネルギー-1。通常防御・見切り・封印・カウンターで防がれる"},
+    {"id":"volley","name":"連撃","cost":3,"icon":"⚔️","type":"attack","description":"2ダメージ。通常防御・見切り・封印・カウンターで防がれる"},
+    {"id":"crush","name":"粉砕","cost":3,"icon":"💥","type":"attack","description":"通常防御なら2ダメージ。それ以外は効果なし。見切り・封印で防がれる"},
+    {"id":"lifedrain","name":"生命吸収","cost":3,"icon":"🩸","type":"attack","description":"1ダメージ。命中時、自分のHPを1回復。通常防御・見切り・封印・カウンターで防がれる"},
+    {"id":"final","name":"終焉の一撃","cost":4,"icon":"☄️","type":"attack","description":"2ダメージ。通常防御でも1ダメージ。チャージ中断。見切り・封印で防がれる"},
+    {"id":"armor","name":"装甲展開","cost":4,"icon":"🛡️","type":"defense","description":"永続シールド2を獲得。発動ターンからダメージを防ぐ。封印で無効化"},
+    {"id":"allin","name":"オールイン","cost":5,"icon":"🔥","type":"attack","description":"3ダメージ。通常防御・見切り・封印・カウンターで防がれる"},
+    {"id":"judgment","name":"終局宣告","cost":10,"icon":"👑","type":"ultimate","description":"発動時に勝利。防御・見切り・封印・シールドを無視。同時使用ならサドンデス"}
   ]);
   const LOOKUP = Object.fromEntries(CARDS.map(function (card) { return [card.id, card]; }));
   // Sudden death is a separate zero-resource 3-way mind game.
@@ -26,13 +30,13 @@
   });
   const SD_WIN = Object.freeze({ sd_attack: "sd_break", sd_guard: "sd_attack", sd_break: "sd_guard" });
   const BASIC = Object.freeze({
-    charge: { id: "charge", name: "チャージ", cost: 0, icon: "⚡", description: "エネルギー+1。通常攻撃を受けると獲得失敗" },
-    attack: { id: "attack", name: "通常攻撃", cost: 1, icon: "⚔️", description: "1ダメージ。相手のチャージを中断。通常防御で防げる" },
-    guard: { id: "guard", name: "通常防御", cost: 0, icon: "🛡️", description: "通常攻撃と一部の特殊攻撃を防ぐ" }
+    charge: { id: "charge", name: "チャージ", cost: 0, icon: "⚡", description: "エネルギー+1。通常攻撃・エネルギー泥棒・チャージ狩り・終焉の一撃で中断される" },
+    attack: { id: "attack", name: "通常攻撃", cost: 1, icon: "⚔️", description: "1ダメージ。チャージを中断。通常防御・カウンターで防がれる" },
+    guard: { id: "guard", name: "通常防御", cost: 0, icon: "🛡️", description: "通常攻撃・連撃・オールイン・生命吸収・チャージ狩りを防ぐ。貫通攻撃は1、粉砕は2、終焉の一撃は1ダメージ受ける" }
   });
 
   function createPlayer() {
-    return { hp: START_HP, energy: 1, used: [] };
+    return { hp: START_HP, shield: 0, energy: 1, used: [] };
   }
   function createGame() {
     return { turn: 1, players: [createPlayer(), createPlayer()], winner: null, suddenDeath: false, history: [] };
@@ -43,6 +47,7 @@
     if (suddenDeath) return !!SUDDEN[id];
     const move = BASIC[id] || LOOKUP[id];
     return !!move && player.hp > 0 && player.energy >= move.cost &&
+      (id !== "burn" || player.hp > 1) &&
       (!isCard(id) || !player.used.includes(id));
   }
   function availableMoves(player, suddenDeath) {
@@ -62,13 +67,13 @@
         winner === null ? "同じ手！ サドンデス続行！" : "SUDDEN DEATH 決着！"];
       return {
         turn: game.turn + 1,
-        players: game.players.map(function (p) { return { hp: p.hp, energy: p.energy, used: p.used.slice() }; }),
+        players: game.players.map(function (p) { return { hp: p.hp, shield: p.shield || 0, energy: p.energy, used: p.used.slice() }; }),
         winner: winner, suddenDeath: true,
         history: game.history.concat([{ turn: game.turn, moves: ids, damages: [0, 0], messages: messages }])
       };
     }
     const players = game.players.map(function (p) {
-      return { hp: p.hp, energy: p.energy, used: p.used.slice() };
+      return { hp: p.hp, shield: p.shield || 0, energy: p.energy, used: p.used.slice() };
     });
     ids.forEach(function (id, i) {
       if (!validMove(players[i], id, false)) throw new Error("使用できない行動: " + id);
@@ -89,62 +94,94 @@
       }
     }
     if (cancelled[0] || cancelled[1]) log.push("封印によって特殊カードが無効化！");
-    const gain = [0, 0];
+    const gain = [0, 0], energyLoss = [0, 0];
+    // Seal versus seal cancels both cards, so neither earns a refund.
     for (let i = 0; i < 2; i++) {
+      const other = 1 - i;
       if (cancelled[i]) continue;
-      if (ids[i] === "drain" && ids[1 - i] === "charge") {
-        cancelled[1 - i] = true;
+      if (ids[i] === "seal" && isCard(ids[other]) && ids[other] !== "judgment") {
+        gain[i] += 1;
+        log.push("P" + (i + 1) + "の封印成功！ エネルギー+1");
+      } else if (ids[i] === "drain" && ids[other] === "charge") {
+        cancelled[other] = true;
         gain[i] += 2;
         log.push("P" + (i + 1) + "がチャージを奪った！");
-      } else if (ids[i] === "feint" && ids[1 - i] === "guard") {
+      } else if (ids[i] === "feint" && ids[other] === "guard") {
         gain[i] += 3;
         log.push("P" + (i + 1) + "のフェイント成功！");
+      } else if (ids[i] === "burn") {
+        gain[i] += 3;
+        log.push("P" + (i + 1) + "がHPを1消費してエネルギー+3！");
       }
     }
     ids.forEach(function (id, i) {
       if (id === "charge" && !cancelled[i]) gain[i]++;
     });
-    const incoming = [0, 0];
-    const damage = { attack: 1, pierce: 1, volley: 2, crush: 1, final: 2, allin: 3 };
+    const incoming = [0, 0], lifeHit = [false, false];
+    const damage = { attack: 1, pierce: 1, volley: 2, crush: 0,
+      final: 2, allin: 3, lifedrain: 1, chargehunter: 1 };
+    const reflectable = new Set(["attack", "volley", "allin", "lifedrain", "chargehunter"]);
     for (let i = 0; i < 2; i++) {
-      const target = 1 - i;
-      const id = ids[i];
+      const target = 1 - i, id = ids[i];
       if (cancelled[i] || damage[id] === undefined) continue;
       let amount = damage[id];
       const response = cancelled[target] ? "" : ids[target];
+      if (id === "crush" && response === "guard") amount = 2;
       if (response === "guard") {
-        if (id === "attack" || id === "volley" || id === "allin") amount = 0;
-        if (id === "crush") amount = 2;
+        if (id === "attack" || id === "volley" || id === "allin" ||
+            id === "lifedrain" || id === "chargehunter") amount = 0;
         if (id === "final") amount = 1;
       }
       if (response === "read" && isCard(id)) amount = 0;
-      if (response === "counter" && (id === "attack" || id === "volley" || id === "allin")) {
+      if (response === "counter" && reflectable.has(id)) {
+        const reflected = amount;
         amount = 0;
-        incoming[i] += 1;
-        log.push("P" + (target + 1) + "のカウンター成功！");
+        incoming[i] += reflected; // Reflect damage only, never side effects.
+        log.push("P" + (target + 1) + "のカウンター成功！ " + reflected + "ダメージ反射");
       }
-      // A landed BASIC attack interrupts the opponent's charge this turn.
-      // Other special attacks do not interrupt charging, even when damaging.
-      if (id === "attack" && response === "charge" && amount > 0) {
-        gain[target] = 0;
-        log.push("P" + (target + 1) + "のチャージが通常攻撃で中断！");
+      if (amount > 0 && response === "charge") {
+        if (id === "attack" || id === "final" || id === "chargehunter") {
+          gain[target] = 0;
+          log.push("P" + (target + 1) + "のチャージが" +
+            (id === "attack" ? "通常攻撃で中断！" : "中断！"));
+        }
+        if (id === "chargehunter") {
+          energyLoss[target]++;
+          log.push("P" + (target + 1) + "のエネルギー-1");
+        }
       }
+      if (id === "lifedrain" && amount > 0) lifeHit[i] = true;
       incoming[target] += amount;
     }
-    // 終局宣告は発動した時点で勝敗が確定する。
-    // 同じターンの攻撃で使用者のHPが0になったように表示しない。
-    // 終局宣告同士の同時発動は現行仕様どおり引き分け。
-    const judgmentA = ids[0] === "judgment";
-    const judgmentB = ids[1] === "judgment";
+    const judgmentA = ids[0] === "judgment", judgmentB = ids[1] === "judgment";
     if (judgmentA !== judgmentB) {
       const declaring = judgmentA ? 0 : 1;
       incoming[declaring] = 0;
       log.push("P" + (declaring + 1) + "の終局宣告が成立！ 即時勝利");
     }
+    // New armor is active this turn. Self-harm bypasses it. Lifedrain heals
+    // on any landed hit (including shields), before simultaneous incoming damage.
     players.forEach(function (p, i) {
-      p.energy = clampEnergy(p.energy + gain[i]);
-      p.hp = Math.max(0, p.hp - incoming[i]);
+      if (ids[i] === "armor" && !cancelled[i]) {
+        p.shield += 2;
+        log.push("P" + (i + 1) + "がシールド2を展開！");
+      }
+      if (ids[i] === "burn" && !cancelled[i]) p.hp -= 1;
+      if (lifeHit[i]) {
+        p.hp = Math.min(START_HP, p.hp + 1);
+        log.push("P" + (i + 1) + "がHPを1回復！");
+      }
     });
+    const absorbed = [0, 0];
+    players.forEach(function (p, i) {
+      p.energy = clampEnergy(p.energy + gain[i] - energyLoss[i]);
+      absorbed[i] = Math.min(p.shield, incoming[i]);
+      p.shield -= absorbed[i];
+      p.hp = Math.max(0, p.hp - (incoming[i] - absorbed[i]));
+    });
+    if (absorbed[0] || absorbed[1]) {
+      log.push("シールド吸収：P1 " + absorbed[0] + " / P2 " + absorbed[1]);
+    }
     let winner = null;
     if (judgmentA && judgmentB) winner = "draw";
     else if (judgmentA) winner = 0;

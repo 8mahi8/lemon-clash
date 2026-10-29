@@ -9,14 +9,14 @@ function withEnergy(n) {
   g.players[1].energy = n;
   return g;
 }
-test("initial state and eleven unique one-use cards", () => {
+test("initial state and fifteen unique one-use cards", () => {
   const g = game();
   assert.equal(g.players[0].energy, 1);
   assert.equal(R.START_HP, 3);
   assert.deepEqual(g.players.map(p => p.hp), [3, 3]);
   assert.equal(R.MAX_ENERGY, 10);
-  assert.equal(R.CARDS.length, 11);
-  assert.equal(new Set(R.CARDS.map(c => c.id)).size, 11);
+  assert.equal(R.CARDS.length, 15);
+  assert.equal(new Set(R.CARDS.map(c => c.id)).size, 15);
 });
 test("attack costs one and cannot be spammed at zero", () => {
   const g = R.resolveTurn(game(), "attack", "charge");
@@ -46,8 +46,8 @@ test("charge still generates one energy against non-attack moves", () => {
   }
 });
 
-test("special attacks do not interrupt charge despite causing damage", () => {
-  for (const move of ["pierce", "volley", "crush", "final", "allin"]) {
+test("most special attacks do not interrupt charge despite causing damage", () => {
+  for (const move of ["pierce", "volley", "lifedrain", "allin"]) {
     const g = R.createGame();
     g.players[0].energy = 5; // All In now requires five energy.
     const out = R.resolveTurn(g, move, "charge");
@@ -96,7 +96,7 @@ test("read stops special attacks, not basic attack", () => {
 });
 test("counter reflects ordinary attack and nonpiercing specials", () => {
   let g = R.resolveTurn(withEnergy(4), "counter", "volley");
-  assert.deepEqual(g.players.map(p => p.hp), [3, 2]);
+  assert.deepEqual(g.players.map(p => p.hp), [3, 1]);
   g = R.resolveTurn(withEnergy(4), "counter", "pierce");
   assert.deepEqual(g.players.map(p => p.hp), [2, 3]);
 });
@@ -112,7 +112,7 @@ test("seal stops ALL non-judgment special cards even the expensive ones", () => 
       } else {
         assert.deepEqual(out.players.map(p=>p.hp), [3,3], card.id);
         assert.deepEqual(out.history[0].damages, [0,0], card.id);
-        assert.equal(out.players[seat].energy, 8);
+        assert.equal(out.players[seat].energy, card.id === "seal" ? 8 : 9);
         assert.equal(out.players[1-seat].energy, 10-card.cost);
       }
     }
@@ -181,7 +181,7 @@ test("early basic attacks delay All In preparation by interrupting charges", () 
 });
 
 test("All In remains one-use and loses against defensive counters", () => {
-  for (const [counter, hpAttacker] of [["guard",3],["read",3],["counter",2]]) {
+  for (const [counter, hpAttacker] of [["guard",3],["read",3],["counter",0]]) {
     const g = withEnergy(5);
     const result = R.resolveTurn(g, "allin", counter);
     assert.equal(result.players[1].hp, 3);

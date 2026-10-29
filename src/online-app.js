@@ -140,7 +140,7 @@
       suddenDeath: value.suddenDeath === true,
       history: Array.isArray(value.history) ? value.history : [],
       players: value.players.map(p => ({
-        hp: p.hp, energy: p.energy, used: Array.isArray(p.used) ? p.used : []
+        hp: p.hp, shield: p.shield, energy: p.energy, used: Array.isArray(p.used) ? p.used : []
       }))
     };
   }
@@ -204,9 +204,9 @@
     }
     for (let i = 0; i < 2; i++) {
       const a = expected.players[i], b = latest.players[i];
-      if (a.hp !== b.hp || a.energy !== b.energy ||
+      if (a.hp !== b.hp || a.shield !== b.shield || a.energy !== b.energy ||
           JSON.stringify(a.used) !== JSON.stringify(b.used)) {
-        throw new Error("HP・エネルギー・使用済みカードが同期していません");
+        throw new Error("HP・シールド・エネルギー・使用済みカードが同期していません");
       }
     }
   }
@@ -231,8 +231,8 @@
     const self = game.players[selfIndex], other = game.players[1 - selfIndex];
     setText("myName", "YOU · " + (selfIndex + 1) + "P");
     setText("opName", "RIVAL · " + (2 - selfIndex) + "P");
-    setText("myHp", "♥ " + self.hp + "/" + R.START_HP);
-    setText("opHp", "♥ " + other.hp + "/" + R.START_HP);
+    setText("myHp", "♥ " + self.hp + "/" + R.START_HP + (self.shield ? " 🛡️" + self.shield : ""));
+    setText("opHp", "♥ " + other.hp + "/" + R.START_HP + (other.shield ? " 🛡️" + other.shield : ""));
     setText("myEn", "⚡ " + self.energy + "/" + R.MAX_ENERGY);
     setText("opEn", "⚡ " + other.energy + "/" + R.MAX_ENERGY);
     // Static, low-cost visual indicator. Never changes game logic or HP.
@@ -282,7 +282,8 @@
       desc.textContent = move.description + (R.isCard(id) ? "（使い切り）" : "");
       $("cardDetail").replaceChildren(title, desc);
       setText("selectedDetail", valid ? "確定すると取り消せません。" :
-        "必要なエネルギーが足りません（⚡" + move.cost + "）");
+        (id === "burn" && player.hp === 1 ? "HP1では生命燃焼を使えません" :
+          "必要なエネルギーが足りません（⚡" + move.cost + "）"));
       drawHand();
     });
     return button;

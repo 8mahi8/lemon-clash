@@ -3,7 +3,7 @@
    No Firebase imports and no side effects. */
 (function (root) {
   "use strict";
-  const VERSION = 2; // RC6: three-choice sudden death, never join RC2/RC5 rooms
+  const VERSION = 3; // RC8: new cards and persistent shields; never join RC6/RC7 rooms
   const ALPHABET = "0123456789abcdef";
   function assertText(value, field, max = 128) {
     if (typeof value !== "string" || !value || value.length > max) {

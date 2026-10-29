@@ -45,7 +45,7 @@ const server=http.createServer((_req,res)=>{
       const a=await pastedFrame(browser,offline,profile.width,profile.height);
       try{
         await a.inner.locator("#botStart").click();
-        assert.equal(await a.inner.locator("#cards .move").count(),11);
+        assert.equal(await a.inner.locator("#cards .move").count(),15);
         await a.inner.locator('#cards .move[aria-label^="フェイント"]').click();
         assert.match(await a.inner.locator("#cardDetail").innerText(),/フェイント/);
         await a.inner.locator("#confirm").click();

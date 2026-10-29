@@ -54,8 +54,8 @@
     $("opEn").textContent = "⚡ " + foe.energy + "/" + R.MAX_ENERGY;
     $("opMeter").classList.toggle("danger", foe.energy >= R.MAX_ENERGY);
     $("opWarning").classList.toggle("hidden", game.suddenDeath || foe.energy < R.MAX_ENERGY);
-    $("myHp").textContent += "/" + R.START_HP;
-    $("opHp").textContent += "/" + R.START_HP;
+    $("myHp").textContent += "/" + R.START_HP + (self.shield ? " 🛡️" + self.shield : "");
+    $("opHp").textContent += "/" + R.START_HP + (foe.shield ? " 🛡️" + foe.shield : "");
     $("myEn").textContent += "/" + R.MAX_ENERGY;
     for (const [id, value] of [["myMeter", self.energy], ["opMeter", foe.energy]]) {
       const meter = $(id); meter.replaceChildren();
@@ -95,7 +95,10 @@
         selected = null;
       } else selected = id;
       renderMoves();
-      $("selectedDetail").textContent = move.name + "： " + move.description;
+      $("selectedDetail").textContent = !canPlay ?
+        (id === "burn" && player.hp === 1 ? "HP1では生命燃焼を使えません" :
+          "エネルギー不足（必要 ⚡" + move.cost + "）") :
+        "確定すると取り消せません。";
       $("cardDetail").replaceChildren();
       const title = document.createElement("strong"); title.textContent = move.icon + " " + move.name + " · ⚡" + move.cost;
       const detail = document.createElement("p"); detail.textContent = move.description + (R.isCard(id) ? "（使い切り）" : "（何度でも使用可能）");
@@ -155,8 +158,9 @@
     const moves = R.availableMoves(player);
     const weights = {
       charge: 20, attack: 20, guard: 15,
-      feint: 7, drain: 9, read: 7, pierce: 10, counter: 11,
-      seal: 8, volley: 7, crush: 11, final: 7, allin: 7, judgment: 100
+      feint: 7, drain: 9, read: 7, burn: 5, pierce: 10, counter: 11,
+      seal: 8, chargehunter: 9, volley: 7, crush: 8, lifedrain: 8,
+      final: 7, armor: 8, allin: 7, judgment: 100
     };
     if (player.energy === 0) { weights.charge = 90; weights.guard = 10; }
     if (player.energy >= R.MAX_ENERGY) weights.charge = 0;
@@ -165,6 +169,9 @@
       weights.attack = 24;
       weights.drain = 19;
     }
+    if (player.hp === 1) { weights.burn = 0; weights.lifedrain = 19; }
+    if (player.hp === 2) weights.lifedrain = 16;
+    if (player.shield > 0) weights.armor = 0;
     if (enemy.energy >= 3) {
       weights.read = 16;
       weights.counter = 18;
@@ -174,7 +181,8 @@
     if (player.energy >= R.MAX_ENERGY && moves.includes("judgment")) return "judgment";
     if (enemy.hp === 1) {
       weights.pierce = 25;
-      weights.crush = 16;
+      weights.crush = 10;
+      weights.chargehunter = 18;
       weights.final = 19;
       weights.attack = 18;
     }
